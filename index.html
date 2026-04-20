@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Comparateur — Auchan vs Super U</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   VARIABLES — LIGHT / DARK
+============================================================ */
+:root {
+  --bg:            #f0f2f5;
+  --bg2:           #e4e7ed;
+  --surface:       #ffffff;
+  --surface2:      #f8f9fb;
+  --border:        #dde2ea;
+  --text:          #111827;
+  --text-muted:    #6b7280;
+  --text-faint:    #9ca3af;
+
+  --a-color:       #dc2626;
+  --a-light:       #fff1f2;
+  --a-border:      #fecaca;
+  --s-color:       #1d4ed8;
+  --s-light:       #eff6ff;
+  --s-border:      #bfdbfe;
+
+  --green-bg:      #d1fae5;
+  --green-text:    #065f46;
+  --accent:        #6d28d9;
+  --accent2:       #8b5cf6;
+
+  --radius:        14px;
+  --radius-sm:     9px;
+  --radius-xs:     6px;
+  --shadow:        0 1px 2px rgba(0,0,0,.06), 0 4px 20px rgba(0,0,0,.07);
+  --shadow-lg:     0 8px 40px rgba(0,0,0,.14);
+
+  --font:          'DM Sans', sans-serif;
+  --mono:          'DM Mono', monospace;
+}
+
+[data-theme="dark"] {
+  --bg:            #0f1117;
+  --bg2:           #1a1d27;
+  --surface:       #1e2130;
+  --surface2:      #252840;
+  --border:        #2e3350;
+  --text:          #e8eaf0;
+  --text-muted:    #8891b0;
+  --text-faint:    #4a5070;
+
+  --a-color:       #f87171;
+  --a-light:       #2d1b1b;
+  --a-border:      #5a2020;
+  --s-color:       #60a5fa;
+  --s-light:       #1a2340;
+  --s-border:      #1e3a60;
+
+  --green-bg:      #064e3b;
+  --green-text:    #6ee7b7;
+  --accent:        #a78bfa;
+  --accent2:       #c4b5fd;
+
+  --shadow:        0 1px 2px rgba(0,0,0,.2), 0 4px 20px rgba(0,0,0,.3);
+  --shadow-lg:     0 8px 40px rgba(0,0,0,.5);
+}
+
+/* ============================================================
+   RESET & BASE
+============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { -webkit-tap-highlight-color: transparent; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding: 20px 12px 72px;
+  transition: background .3s, color .3s;
+}
+
+/* ============================================================
+   HEADER
+============================================================ */
+.header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 28px;
+  gap: 6px;
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.header h1 {
+  font-size: clamp(1.25rem, 5vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.6px;
+  line-height: 1.2;
+}
+
+.header h1 .a { color: var(--a-color); }
+.header h1 .s { color: var(--s-color); }
+
+.header-sub {
+  color: var(--text-muted);
+  font-size: .82rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.sync-dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #9ca3af;
+  transition: background .3s;
+}
+.sync-dot.online  { background: #22c55e; box-shadow: 0 0 0 3px rgba(34,197,94,.25); }
+.sync-dot.syncing { background: #f59e0b; animation: pulse .8s infinite; }
+.sync-dot.error   { background: #ef4444; }
+
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+/* ============================================================
+   DARK MODE TOGGLE
+============================================================ */
+.theme-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 99px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: .82rem;
+  font-weight: 600;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: all .2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.theme-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ============================================================
+   CARD
+============================================================ */
+.card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px 16px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+  transition: background .3s, border-color .3s;
+}
+
+.card-title {
+  font-size: .95rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.badge {
+  font-size: .7rem;
+  font-weight: 600;
+  padding: 2px 9px;
+  border-radius: 99px;
+  background: var(--bg);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+
+/* ============================================================
+   TOOLBAR
+============================================================ */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+/* ============================================================
+   BUTTONS
+============================================================ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  font-size: .85rem;
+  font-weight: 700;
+  font-family: var(--font);
+  cursor: pointer;
+  border: none;
+  transition: all .15s;
+  white-space: nowrap;
+  min-height: 44px; /* touch target */
+}
+.btn:active { transform: scale(.96); }
+
+.btn-primary  { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent2); }
+
+.btn-auchan   { background: var(--a-light); color: var(--a-color); border: 1px solid var(--a-border); }
+.btn-auchan:hover { filter: brightness(.95); }
+
+.btn-superu   { background: var(--s-light); color: var(--s-color); border: 1px solid var(--s-border); }
+.btn-superu:hover { filter: brightness(.95); }
+
+.btn-ghost    { background: var(--surface2); color: var(--text-muted); border: 1px solid var(--border); }
+.btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+.btn-danger   { background: var(--a-light); color: var(--a-color); border: 1px solid var(--a-border); }
+.btn-danger:hover { filter: brightness(.95); }
+
+.btn-sm { padding: 6px 12px; font-size: .78rem; min-height: 36px; }
+
+/* ============================================================
+   TABLE
+============================================================ */
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .88rem;
+}
+
+th {
+  text-align: left;
+  padding: 10px 10px;
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--text-muted);
+  background: var(--surface2);
+  border-bottom: 2px solid var(--border);
+  white-space: nowrap;
+}
+th.th-a { color: var(--a-color); }
+th.th-s { color: var(--s-color); }
+
+td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--surface2); }
+
+/* Inputs inside table */
+td input[type="text"],
+td input[type="number"] {
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: var(--radius-xs);
+  padding: 8px 10px;
+  font-size: .88rem;
+  font-family: var(--font);
+  background: transparent;
+  color: var(--text);
+  transition: border-color .15s, background .15s;
+  min-height: 40px;
+}
+td input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--surface);
+  box-shadow: 0 0 0 3px rgba(109,40,217,.12);
+}
+td input[type="number"] { text-align: right; font-family: var(--mono); }
+
+/* Responsive: collapse handle on mobile */
+.drag-handle {
+  cursor: grab;
+  color: var(--text-faint);
+  font-size: 1.1rem;
+  user-select: none;
+  padding: 0 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.drag-handle:active { cursor: grabbing; }
+tr.dragging { opacity: .4; }
+tr.drag-over td { border-top: 2px solid var(--accent); }
+
+/* Cheap highlight */
+.cell-cheap { background: var(--green-bg) !important; }
+.cell-cheap input { font-weight: 700; color: var(--green-text); }
+
+@media (max-width: 480px) {
+  .drag-handle { display: none; }
+  th.th-handle { display: none; }
+  td.td-handle { display: none; }
+  td input[type="text"], td input[type="number"] { font-size: .82rem; padding: 7px 8px; }
+}
+
+/* ============================================================
+   TOTALS
+============================================================ */
+.totals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.total-box {
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  border: 1px solid var(--border);
+}
+.total-box.auchan  { background: var(--a-light); border-color: var(--a-border); }
+.total-box.superu  { background: var(--s-light); border-color: var(--s-border); }
+.total-box.economy { background: var(--green-bg); border-color: #6ee7b7; }
+
+.total-label {
+  font-size: .7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+.total-value {
+  font-size: 1.4rem;
+  font-weight: 800;
+  font-family: var(--mono);
+  letter-spacing: -0.5px;
+}
+.total-box.auchan  .total-value { color: var(--a-color); }
+.total-box.superu  .total-value { color: var(--s-color); }
+.total-box.economy .total-value { color: var(--green-text); }
+
+/* ============================================================
+   RECO TABLE
+============================================================ */
+.store-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 99px;
+  font-size: .75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.store-badge.auchan { background: var(--a-light); color: var(--a-color); }
+.store-badge.superu { background: var(--s-light); color: var(--s-color); }
+.store-badge.equal  { background: #fef9c3; color: #854d0e; }
+[data-theme="dark"] .store-badge.equal { background: #422006; color: #fde68a; }
+
+/* ============================================================
+   SHOPPING LISTS
+============================================================ */
+.lists-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+}
+
+.shop-list {
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  border: 1px solid var(--border);
+}
+.shop-list.auchan { background: var(--a-light); border-color: var(--a-border); }
+.shop-list.superu { background: var(--s-light); border-color: var(--s-border); }
+
+.shop-list h3 {
+  font-size: .8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  margin-bottom: 12px;
+}
+.shop-list.auchan h3 { color: var(--a-color); }
+.shop-list.superu h3 { color: var(--s-color); }
+
+.shop-list ul { list-style: none; }
+.shop-list ul li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+  font-size: .88rem;
+  border-bottom: 1px dashed rgba(128,128,128,.15);
+}
+.shop-list ul li:last-child { border-bottom: none; }
+
+.item-name  { flex: 1; min-width: 0; }
+.item-price { font-weight: 700; font-family: var(--mono); white-space: nowrap; }
+
+/* Checked items */
+.shop-list ul li.checked .item-name {
+  text-decoration: line-through;
+  color: var(--text-faint);
+}
+.shop-list ul li.checked .item-price {
+  color: var(--text-faint);
+}
+
+/* Checkbox styling */
+.item-check {
+  width: 20px; height: 20px;
+  min-width: 20px;
+  border-radius: 5px;
+  border: 2px solid var(--border);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--surface);
+  transition: all .15s;
+  position: relative;
+}
+.shop-list.auchan .item-check:checked { background: var(--a-color); border-color: var(--a-color); }
+.shop-list.superu .item-check:checked { background: var(--s-color); border-color: var(--s-color); }
+.item-check:checked::after {
+  content: '';
+  position: absolute;
+  left: 4px; top: 1px;
+  width: 8px; height: 11px;
+  border-right: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  transform: rotate(45deg);
+}
+
+.list-total {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 2px solid rgba(128,128,128,.15);
+  font-weight: 800;
+  font-size: .92rem;
+  font-family: var(--mono);
+  display: flex;
+  justify-content: space-between;
+}
+.shop-list.auchan .list-total { color: var(--a-color); }
+.shop-list.superu .list-total { color: var(--s-color); }
+
+.empty-msg {
+  color: var(--text-faint);
+  font-style: italic;
+  font-size: .83rem;
+}
+
+/* ============================================================
+   TOAST
+============================================================ */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--text);
+  color: var(--surface);
+  padding: 11px 22px;
+  border-radius: 99px;
+  font-size: .84rem;
+  font-weight: 600;
+  box-shadow: var(--shadow-lg);
+  opacity: 0;
+  transition: all .3s ease;
+  z-index: 9999;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ============================================================
+   OFFLINE BANNER
+============================================================ */
+.offline-banner {
+  display: none;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  color: #92400e;
+  border-radius: var(--radius-sm);
+  padding: 10px 16px;
+  font-size: .84rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+  text-align: center;
+}
+[data-theme="dark"] .offline-banner { background: #451a03; border-color: #92400e; color: #fcd34d; }
+.offline-banner.visible { display: block; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <h1>🛒 <span class="a">Auchan</span> vs <span class="s">Super U</span></h1>
+    <button class="theme-btn" id="theme-btn" onclick="toggleTheme()">🌙 Sombre</button>
+  </div>
+  <div class="header-sub">
+    <span class="sync-dot" id="sync-dot"></span>
+    <span id="sync-status">Connexion…</span>
+  </div>
+</div>
+
+<!-- OFFLINE BANNER -->
+<div class="offline-banner" id="offline-banner">
+  ⚠️ Mode hors-ligne — les données sont sauvegardées localement
+</div>
+
+<!-- TABLEAU PRINCIPAL -->
+<div class="card">
+  <div class="card-title">
+    📋 Tableau des prix
+    <span class="badge" id="row-count">0 produit</span>
+  </div>
+
+  <div class="toolbar">
+    <button class="btn btn-primary" onclick="addRow()">＋ Produit</button>
+    <button class="btn btn-auchan" onclick="sortByAuchan()">↑ Auchan</button>
+    <button class="btn btn-superu" onclick="sortBySuperU()">↑ Super U</button>
+    <button class="btn btn-ghost" onclick="exportJSON()">⬇ Export</button>
+    <label class="btn btn-ghost" style="cursor:pointer;">
+      ⬆ Import
+      <input type="file" id="import-input" accept=".json" style="display:none" onchange="importJSON(event)">
+    </label>
+  </div>
+
+  <div class="table-wrap">
+    <table id="main-table">
+      <thead>
+        <tr>
+          <th class="th-handle" style="width:28px"></th>
+          <th>Produit</th>
+          <th class="th-a">🔴 Auchan Parly 2</th>
+          <th class="th-s">🔵 Super U Le Chesnay</th>
+          <th style="width:44px"></th>
+        </tr>
+      </thead>
+      <tbody id="main-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- TOTAUX -->
+<div class="card">
+  <div class="card-title">💰 Totaux du panier</div>
+  <div class="totals-grid">
+    <div class="total-box auchan">
+      <div class="total-label">Total Auchan</div>
+      <div class="total-value" id="total-auchan">0,00 €</div>
+    </div>
+    <div class="total-box superu">
+      <div class="total-label">Total Super U</div>
+      <div class="total-value" id="total-superu">0,00 €</div>
+    </div>
+    <div class="total-box economy">
+      <div class="total-label">Économie</div>
+      <div class="total-value" id="total-economy">0,00 €</div>
+    </div>
+  </div>
+</div>
+
+<!-- RECOMMANDATIONS -->
+<div class="card">
+  <div class="card-title">⭐ Magasin recommandé par produit</div>
+  <div class="table-wrap">
+    <table id="reco-table">
+      <thead>
+        <tr>
+          <th>Produit</th>
+          <th>Magasin</th>
+          <th style="text-align:right">Prix</th>
+        </tr>
+      </thead>
+      <tbody id="reco-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- LISTES DE COURSES -->
+<div class="card">
+  <div class="card-title">🛍 Listes de courses optimisées</div>
+  <div class="lists-grid">
+    <div class="shop-list auchan">
+      <h3>🔴 Auchan Parly 2</h3>
+      <ul id="list-auchan"></ul>
+      <div class="list-total" id="list-total-auchan" style="display:none">
+        <span>Total</span><span id="list-total-auchan-val"></span>
+      </div>
+    </div>
+    <div class="shop-list superu">
+      <h3>🔵 Super U Le Chesnay</h3>
+      <ul id="list-superu"></ul>
+      <div class="list-total" id="list-total-superu" style="display:none">
+        <span>Total</span><span id="list-total-superu-val"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- ============================================================
+     FIREBASE + APP SCRIPT
+============================================================ -->
+<script type="module">
+/* ============================================================
+   FIREBASE INIT
+============================================================ */
+import { initializeApp }              from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getFirestore, doc, getDoc,
+         setDoc, onSnapshot,
+         enableIndexedDbPersistence } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyBz52x51NUstvPvp2ZmhuzWvnPYjxQy32U",
+  authDomain:        "comparateur-courses.firebaseapp.com",
+  projectId:         "comparateur-courses",
+  storageBucket:     "comparateur-courses.firebasestorage.app",
+  messagingSenderId: "425968368538",
+  appId:             "1:425968368538:web:75644682d87895e9d4d823"
+};
+
+const app  = initializeApp(firebaseConfig);
+const db   = getFirestore(app);
+const docRef = doc(db, 'etat', 'global');
+
+/* Active la persistance hors-ligne (IndexedDB) */
+enableIndexedDbPersistence(db).catch(() => {});
+
+/* ============================================================
+   ÉTAT GLOBAL
+============================================================ */
+let rows    = [];   // [{id, product, auchan, superu}]
+let checked = {};   // {storeKey_productName: true/false}
+let dark    = false;
+let dragSrcIdx  = null;
+let ignoreSnapshot = false; // évite la boucle setDoc → onSnapshot → setDoc
+let writeTimer     = null;
+
+/* ============================================================
+   SYNCHRONISATION — FIREBASE
+============================================================ */
+function setSyncUI(state) {
+  const dot    = document.getElementById('sync-dot');
+  const status = document.getElementById('sync-status');
+  dot.className = 'sync-dot ' + state;
+  const labels = { online: 'Synchronisé', syncing: 'Synchronisation…', error: 'Hors-ligne (local)', offline: 'Hors-ligne (local)' };
+  status.textContent = labels[state] || '';
+}
+
+function setOfflineBanner(visible) {
+  document.getElementById('offline-banner').classList.toggle('visible', visible);
+}
+
+/* Lecture initiale puis écoute en temps réel */
+async function initFirestore() {
+  setSyncUI('syncing');
+  try {
+    // Lecture initiale
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      applyRemoteState(snap.data());
+    } else {
+      // Premier lancement : charger localStorage puis uploader
+      loadLocalStorage();
+      await pushToFirestore();
+    }
+    setSyncUI('online');
+    setOfflineBanner(false);
+  } catch (e) {
+    // Hors-ligne au démarrage → localStorage
+    loadLocalStorage();
+    setSyncUI('error');
+    setOfflineBanner(true);
+  }
+
+  renderAll();
+
+  /* Écoute en temps réel */
+  onSnapshot(docRef, (snap) => {
+    if (ignoreSnapshot) return;
+    if (snap.exists()) {
+      applyRemoteState(snap.data());
+      renderAll();
+      setSyncUI('online');
+      setOfflineBanner(false);
+    }
+  }, () => {
+    setSyncUI('error');
+    setOfflineBanner(true);
+  });
+}
+
+/* Applique l'état distant dans les variables locales */
+function applyRemoteState(data) {
+  if (data.rows    && Array.isArray(data.rows))    rows    = data.rows;
+  if (data.checked && typeof data.checked === 'object') checked = data.checked;
+  if (typeof data.dark === 'boolean')              setTheme(data.dark, false);
+  saveLocalStorage();
+}
+
+/* Envoie l'état local vers Firestore (avec debounce) */
+function scheduleFirestoreWrite() {
+  clearTimeout(writeTimer);
+  writeTimer = setTimeout(pushToFirestore, 600);
+}
+
+async function pushToFirestore() {
+  ignoreSnapshot = true;
+  setSyncUI('syncing');
+  try {
+    await setDoc(docRef, { rows, checked, dark });
+    setSyncUI('online');
+    setOfflineBanner(false);
+  } catch (e) {
+    setSyncUI('error');
+    setOfflineBanner(true);
+  }
+  ignoreSnapshot = false;
+}
+
+/* Sauvegarde combinée : localStorage + Firestore */
+function save() {
+  saveLocalStorage();
+  scheduleFirestoreWrite();
+}
+
+/* ============================================================
+   LOCALSTORAGE (fallback)
+============================================================ */
+function saveLocalStorage() {
+  try {
+    localStorage.setItem('comparateur_rows',    JSON.stringify(rows));
+    localStorage.setItem('comparateur_checked', JSON.stringify(checked));
+    localStorage.setItem('comparateur_dark',    JSON.stringify(dark));
+  } catch (_) {}
+}
+
+function loadLocalStorage() {
+  try {
+    const r = localStorage.getItem('comparateur_rows');
+    const c = localStorage.getItem('comparateur_checked');
+    const d = localStorage.getItem('comparateur_dark');
+    if (r) rows    = JSON.parse(r);
+    if (c) checked = JSON.parse(c);
+    if (d) setTheme(JSON.parse(d), false);
+  } catch (_) {}
+}
+
+/* ============================================================
+   THÈME SOMBRE / CLAIR
+============================================================ */
+function setTheme(isDark, persist = true) {
+  dark = isDark;
+  document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+  const btn = document.getElementById('theme-btn');
+  if (btn) btn.textContent = isDark ? '☀️ Clair' : '🌙 Sombre';
+  if (persist) save();
+}
+
+window.toggleTheme = function() { setTheme(!dark); };
+
+/* ============================================================
+   GESTION DES LIGNES
+============================================================ */
+function generateId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2);
+}
+
+window.addRow = function(render = true) {
+  rows.push({ id: generateId(), product: '', auchan: '', superu: '' });
+  if (render) { renderAll(); save(); }
+};
+
+window.deleteRow = function(id) {
+  rows = rows.filter(r => r.id !== id);
+  pruneChecked();
+  renderAll();
+  save();
+};
+
+/* Supprime les états de cases qui n'ont plus de produit correspondant */
+function pruneChecked() {
+  const names = new Set(rows.map(r => r.product.trim()).filter(Boolean));
+  Object.keys(checked).forEach(k => {
+    // clé format : "auchan_NomProduit" ou "superu_NomProduit"
+    const name = k.replace(/^(auchan|superu)_/, '');
+    if (!names.has(name)) delete checked[k];
+  });
+}
+
+/* ============================================================
+   RENDU PRINCIPAL
+============================================================ */
+
+/** Reconstruction complète (structure change : ajout, suppression, tri, import) */
+function renderAll() {
+  rebuildMainTable();
+  renderRecoTable();
+  renderShoppingLists();
+  renderTotals();
+  document.getElementById('row-count').textContent =
+    rows.length + ' produit' + (rows.length > 1 ? 's' : '');
+}
+
+/** Mise à jour légère (saisie dans un input) — préserve le focus */
+function updateFromInput() {
+  updateMainTableColors();
+  renderRecoTable();
+  renderShoppingLists();
+  renderTotals();
+}
+
+/** Reconstruction complète du tbody */
+function rebuildMainTable() {
+  const tbody = document.getElementById('main-tbody');
+  tbody.innerHTML = '';
+  rows.forEach((row, idx) => tbody.appendChild(buildRow(row, idx)));
+  updateMainTableColors();
+}
+
+/** Construit un <tr> pour une ligne */
+function buildRow(row, idx) {
+  const tr = document.createElement('tr');
+  tr.dataset.id  = row.id;
+  tr.dataset.idx = idx;
+  tr.draggable   = true;
+
+  // Handle
+  const tdH = document.createElement('td');
+  tdH.className = 'td-handle';
+  tdH.innerHTML = '<span class="drag-handle" title="Réordonner">⠿</span>';
+  tr.appendChild(tdH);
+
+  // Produit
+  const tdP = document.createElement('td');
+  const inP = document.createElement('input');
+  inP.type = 'text'; inP.placeholder = 'Nom du produit…'; inP.value = row.product;
+  inP.addEventListener('input', e => { row.product = e.target.value; updateFromInput(); save(); });
+  tdP.appendChild(inP); tr.appendChild(tdP);
+
+  // Auchan
+  const tdA = document.createElement('td');
+  tdA.dataset.cell = 'auchan';
+  const inA = makeNumberInput(row, 'auchan');
+  tdA.appendChild(inA); tr.appendChild(tdA);
+
+  // Super U
+  const tdS = document.createElement('td');
+  tdS.dataset.cell = 'superu';
+  const inS = makeNumberInput(row, 'superu');
+  tdS.appendChild(inS); tr.appendChild(tdS);
+
+  // Supprimer
+  const tdD = document.createElement('td');
+  const btn = document.createElement('button');
+  btn.className = 'btn btn-danger btn-sm';
+  btn.textContent = '✕'; btn.title = 'Supprimer';
+  btn.addEventListener('click', () => window.deleteRow(row.id));
+  tdD.appendChild(btn); tr.appendChild(tdD);
+
+  // Drag & drop
+  tr.addEventListener('dragstart', onDragStart);
+  tr.addEventListener('dragover',  onDragOver);
+  tr.addEventListener('drop',      onDrop);
+  tr.addEventListener('dragend',   onDragEnd);
+
+  return tr;
+}
+
+function makeNumberInput(row, field) {
+  const inp = document.createElement('input');
+  inp.type = 'number'; inp.step = '0.01'; inp.min = '0';
+  inp.placeholder = '0,00'; inp.value = row[field];
+  inp.addEventListener('input', e => {
+    row[field] = e.target.value;
+    updateFromInput();
+    save();
+  });
+  return inp;
+}
+
+/** Met à jour uniquement les classes de couleur — aucune perte de focus */
+function updateMainTableColors() {
+  document.querySelectorAll('#main-tbody tr').forEach(tr => {
+    const row = rows.find(r => r.id === tr.dataset.id);
+    if (!row) return;
+    const a = parseFloat(row.auchan), s = parseFloat(row.superu);
+    const both = !isNaN(a) && row.auchan !== '' && !isNaN(s) && row.superu !== '';
+    tr.querySelector('td[data-cell="auchan"]')?.classList.toggle('cell-cheap', both && a < s);
+    tr.querySelector('td[data-cell="superu"]')?.classList.toggle('cell-cheap', both && s < a);
+  });
+}
+
+/* ============================================================
+   TABLEAU RECOMMANDATIONS
+============================================================ */
+function renderRecoTable() {
+  const tbody = document.getElementById('reco-tbody');
+  tbody.innerHTML = '';
+
+  const eligible = rows.filter(r => r.product.trim() && (r.auchan !== '' || r.superu !== ''));
+  if (!eligible.length) {
+    const tr = document.createElement('tr');
+    const td = document.createElement('td');
+    td.colSpan = 3;
+    td.innerHTML = '<span class="empty-msg">Saisissez des produits avec leurs prix.</span>';
+    tr.appendChild(td); tbody.appendChild(tr);
+    return;
+  }
+
+  eligible.forEach(row => {
+    const a = parseFloat(row.auchan), s = parseFloat(row.superu);
+    const aOk = !isNaN(a) && row.auchan !== '';
+    const sOk = !isNaN(s) && row.superu !== '';
+    let store, price, cls;
+
+    if (aOk && sOk) {
+      if (a < s)      { store = 'Auchan Parly 2';     price = a; cls = 'auchan'; }
+      else if (s < a) { store = 'Super U Le Chesnay'; price = s; cls = 'superu'; }
+      else            { store = 'Égalité';             price = a; cls = 'equal';  }
+    } else if (aOk)   { store = 'Auchan Parly 2';     price = a; cls = 'auchan'; }
+    else              { store = 'Super U Le Chesnay'; price = s; cls = 'superu'; }
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${esc(row.product)}</td>
+      <td><span class="store-badge ${cls}">${esc(store)}</span></td>
+      <td style="text-align:right;font-weight:700;font-family:var(--mono)">${fmt(price)}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+/* ============================================================
+   LISTES DE COURSES AVEC CASES À COCHER
+============================================================ */
+function renderShoppingLists() {
+  const ulA = document.getElementById('list-auchan');
+  const ulS = document.getElementById('list-superu');
+  const totA = document.getElementById('list-total-auchan');
+  const totS = document.getElementById('list-total-superu');
+
+  ulA.innerHTML = ''; ulS.innerHTML = '';
+  let sumA = 0, sumS = 0, cntA = 0, cntS = 0;
+
+  rows.forEach(row => {
+    if (!row.product.trim()) return;
+    const a = parseFloat(row.auchan), s = parseFloat(row.superu);
+    const aOk = !isNaN(a) && row.auchan !== '';
+    const sOk = !isNaN(s) && row.superu !== '';
+    if (!aOk && !sOk) return;
+
+    if (aOk && sOk) {
+      if (a <= s) { appendListItem(ulA, row.product, a, 'auchan'); sumA += a; cntA++; }
+      else        { appendListItem(ulS, row.product, s, 'superu'); sumS += s; cntS++; }
+    } else if (aOk) { appendListItem(ulA, row.product, a, 'auchan'); sumA += a; cntA++; }
+    else            { appendListItem(ulS, row.product, s, 'superu'); sumS += s; cntS++; }
+  });
+
+  if (!cntA) ulA.innerHTML = '<li><span class="empty-msg">Aucun produit.</span></li>';
+  if (!cntS) ulS.innerHTML = '<li><span class="empty-msg">Aucun produit.</span></li>';
+
+  const showTotal = (el, valEl, sum, cnt) => {
+    el.style.display = cnt ? 'flex' : 'none';
+    if (valEl) valEl.textContent = fmt(sum);
+  };
+  showTotal(totA, document.getElementById('list-total-auchan-val'), sumA, cntA);
+  showTotal(totS, document.getElementById('list-total-superu-val'), sumS, cntS);
+}
+
+function appendListItem(ul, product, price, store) {
+  const key  = store + '_' + product.trim();
+  const isChk = !!checked[key];
+
+  const li  = document.createElement('li');
+  if (isChk) li.classList.add('checked');
+
+  const cb = document.createElement('input');
+  cb.type = 'checkbox';
+  cb.className = 'item-check';
+  cb.checked   = isChk;
+  cb.addEventListener('change', () => {
+    checked[key] = cb.checked;
+    li.classList.toggle('checked', cb.checked);
+    pruneChecked();
+    save();
+  });
+
+  const nm  = document.createElement('span');
+  nm.className = 'item-name';
+  nm.textContent = product;
+
+  const pr  = document.createElement('span');
+  pr.className = 'item-price';
+  pr.textContent = fmt(price);
+
+  li.appendChild(cb);
+  li.appendChild(nm);
+  li.appendChild(pr);
+  ul.appendChild(li);
+}
+
+/* ============================================================
+   TOTAUX
+============================================================ */
+function renderTotals() {
+  let sumA = 0, sumS = 0;
+  rows.forEach(r => {
+    const a = parseFloat(r.auchan), s = parseFloat(r.superu);
+    if (!isNaN(a) && r.auchan !== '') sumA += a;
+    if (!isNaN(s) && r.superu !== '') sumS += s;
+  });
+  document.getElementById('total-auchan').textContent  = fmt(sumA);
+  document.getElementById('total-superu').textContent  = fmt(sumS);
+  document.getElementById('total-economy').textContent = fmt(Math.abs(sumA - sumS));
+}
+
+/* ============================================================
+   TRI
+============================================================ */
+window.sortByAuchan = function() {
+  rows.sort((a, b) => cmpField(a, b, 'auchan'));
+  renderAll(); save(); showToast('Trié par prix Auchan ↑');
+};
+window.sortBySuperU = function() {
+  rows.sort((a, b) => cmpField(a, b, 'superu'));
+  renderAll(); save(); showToast('Trié par prix Super U ↑');
+};
+function cmpField(a, b, f) {
+  const va = parseFloat(a[f]), vb = parseFloat(b[f]);
+  const aOk = !isNaN(va) && a[f] !== '', bOk = !isNaN(vb) && b[f] !== '';
+  if (!aOk && !bOk) return 0;
+  if (!aOk) return 1;
+  if (!bOk) return -1;
+  return va - vb;
+}
+
+/* ============================================================
+   DRAG & DROP
+============================================================ */
+function onDragStart(e) {
+  dragSrcIdx = parseInt(e.currentTarget.dataset.idx);
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+function onDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  document.querySelectorAll('#main-tbody tr').forEach(r => r.classList.remove('drag-over'));
+  e.currentTarget.classList.add('drag-over');
+}
+function onDrop(e) {
+  e.preventDefault();
+  const tgt = parseInt(e.currentTarget.dataset.idx);
+  if (dragSrcIdx === null || dragSrcIdx === tgt) return;
+  const moved = rows.splice(dragSrcIdx, 1)[0];
+  rows.splice(tgt, 0, moved);
+  renderAll(); save();
+}
+function onDragEnd(e) {
+  e.currentTarget.classList.remove('dragging');
+  document.querySelectorAll('#main-tbody tr').forEach(r => r.classList.remove('drag-over'));
+  dragSrcIdx = null;
+}
+
+/* ============================================================
+   EXPORT / IMPORT JSON
+============================================================ */
+window.exportJSON = function() {
+  const blob = new Blob([JSON.stringify({ version: 2, exportedAt: new Date().toISOString(), rows, checked }, null, 2)],
+                        { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = 'comparateur.json'; a.click();
+  URL.revokeObjectURL(url);
+  showToast('Données exportées ✓');
+};
+
+window.importJSON = function(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (data.rows && Array.isArray(data.rows)) {
+        rows    = data.rows;
+        checked = data.checked || {};
+        renderAll(); save();
+        showToast('Données importées ✓');
+      } else { showToast('Format JSON invalide ✗'); }
+    } catch { showToast('Erreur de lecture JSON ✗'); }
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+};
+
+/* ============================================================
+   UTILITAIRES
+============================================================ */
+function fmt(val) {
+  if (val === '' || val == null || isNaN(parseFloat(val))) return '—';
+  return parseFloat(val).toFixed(2).replace('.', ',') + ' €';
+}
+function esc(str) {
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+/* ============================================================
+   INITIALISATION
+============================================================ */
+document.addEventListener('DOMContentLoaded', async () => {
+  // Thème depuis localStorage avant le chargement Firestore (évite le flash)
+  const d = localStorage.getItem('comparateur_dark');
+  if (d) setTheme(JSON.parse(d), false);
+
+  await initFirestore();
+
+  // Si aucune ligne après init, ajouter 5 lignes vides
+  if (rows.length === 0) {
+    for (let i = 0; i < 5; i++) addRow(false);
+    save();
+    renderAll();
+  }
+});
+</script>
+</body>
+</html>
