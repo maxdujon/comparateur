@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comparateur de Prix — Auchan vs Super U</title>
+<style>
+  /* ===== VARIABLES & RESET ===== */
+  :root {
+    --bg: #f4f6f9;
+    --surface: #ffffff;
+    --surface2: #f9fafb;
+    --border: #e2e8f0;
+    --text: #1a202c;
+    --text-muted: #718096;
+    --auchan-color: #e63946;
+    --auchan-light: #fff0f1;
+    --superu-color: #2563eb;
+    --superu-light: #eff6ff;
+    --green-bg: #c8f7c5;
+    --green-text: #166534;
+    --accent: #7c3aed;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.06);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,.1);
+    --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 24px 16px 60px;
+  }
+
+  /* ===== HEADER ===== */
+  .header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  .header h1 {
+    font-size: clamp(1.4rem, 4vw, 2.2rem);
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: var(--text);
+  }
+  .header h1 span.auchan { color: var(--auchan-color); }
+  .header h1 span.superu { color: var(--superu-color); }
+  .header p {
+    color: var(--text-muted);
+    font-size: .9rem;
+    margin-top: 4px;
+  }
+
+  /* ===== CARD ===== */
+  .card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 24px;
+    margin-bottom: 24px;
+    border: 1px solid var(--border);
+  }
+  .card-title {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title .badge {
+    font-size: .7rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 99px;
+    background: var(--bg);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+  }
+
+  /* ===== TOOLBAR ===== */
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  /* ===== BUTTONS ===== */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    font-size: .85rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all .15s ease;
+    white-space: nowrap;
+  }
+  .btn:active { transform: scale(.97); }
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+  }
+  .btn-primary:hover { background: #6d28d9; }
+  .btn-auchan {
+    background: var(--auchan-light);
+    color: var(--auchan-color);
+    border: 1px solid #fecaca;
+  }
+  .btn-auchan:hover { background: #fee2e2; }
+  .btn-superu {
+    background: var(--superu-light);
+    color: var(--superu-color);
+    border: 1px solid #bfdbfe;
+  }
+  .btn-superu:hover { background: #dbeafe; }
+  .btn-ghost {
+    background: var(--bg);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { background: var(--border); color: var(--text); }
+  .btn-danger {
+    background: #fff5f5;
+    color: #c53030;
+    border: 1px solid #fed7d7;
+  }
+  .btn-danger:hover { background: #fed7d7; }
+  .btn-sm {
+    padding: 4px 10px;
+    font-size: .78rem;
+    border-radius: 6px;
+  }
+
+  /* ===== TABLE ===== */
+  .table-wrap { overflow-x: auto; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .9rem;
+  }
+
+  th {
+    text-align: left;
+    padding: 10px 12px;
+    font-size: .78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: var(--text-muted);
+    background: var(--surface2);
+    border-bottom: 2px solid var(--border);
+  }
+  th.th-auchan { color: var(--auchan-color); }
+  th.th-superu { color: var(--superu-color); }
+
+  td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+
+  td input[type="text"],
+  td input[type="number"] {
+    width: 100%;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    padding: 6px 8px;
+    font-size: .88rem;
+    font-family: var(--font);
+    background: transparent;
+    color: var(--text);
+    transition: border-color .15s, background .15s;
+  }
+  td input:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: var(--surface);
+    box-shadow: 0 0 0 3px rgba(124,58,237,.1);
+  }
+  td input[type="number"] { text-align: right; }
+
+  .cell-cheap { background: var(--green-bg) !important; }
+  .cell-cheap input { font-weight: 700; color: var(--green-text); }
+
+  /* Drag & drop */
+  .drag-handle {
+    cursor: grab;
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    user-select: none;
+    padding: 0 4px;
+  }
+  .drag-handle:active { cursor: grabbing; }
+  tr.dragging { opacity: .4; }
+  tr.drag-over td { border-top: 2px solid var(--accent); }
+
+  /* Totaux */
+  .totals-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+  }
+  .total-box {
+    border-radius: var(--radius-sm);
+    padding: 16px 20px;
+    border: 1px solid var(--border);
+  }
+  .total-box.auchan { background: var(--auchan-light); border-color: #fecaca; }
+  .total-box.superu { background: var(--superu-light); border-color: #bfdbfe; }
+  .total-box.economy { background: #f0fdf4; border-color: #bbf7d0; }
+  .total-label {
+    font-size: .75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+  .total-value {
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+  .total-box.auchan .total-value { color: var(--auchan-color); }
+  .total-box.superu .total-value { color: var(--superu-color); }
+  .total-box.economy .total-value { color: #166534; }
+
+  /* Shopping lists */
+  .lists-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 20px;
+  }
+  .shop-list {
+    border-radius: var(--radius-sm);
+    padding: 18px;
+    border: 1px solid var(--border);
+  }
+  .shop-list.auchan { background: var(--auchan-light); border-color: #fecaca; }
+  .shop-list.superu { background: var(--superu-light); border-color: #bfdbfe; }
+  .shop-list h3 {
+    font-size: .85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    margin-bottom: 12px;
+  }
+  .shop-list.auchan h3 { color: var(--auchan-color); }
+  .shop-list.superu h3 { color: var(--superu-color); }
+  .shop-list ul { list-style: none; }
+  .shop-list ul li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 0;
+    font-size: .88rem;
+    border-bottom: 1px dashed rgba(0,0,0,.08);
+  }
+  .shop-list ul li:last-child { border-bottom: none; }
+  .shop-list ul li .item-price { font-weight: 700; }
+  .shop-list .list-total {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 2px solid rgba(0,0,0,.1);
+    font-weight: 800;
+    font-size: .95rem;
+    display: flex;
+    justify-content: space-between;
+  }
+  .shop-list.auchan .list-total { color: var(--auchan-color); }
+  .shop-list.superu .list-total { color: var(--superu-color); }
+  .empty-msg { color: var(--text-muted); font-style: italic; font-size: .85rem; }
+
+  /* Recommended table */
+  #tbl-reco td:nth-child(2) { font-weight: 600; }
+  .store-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 99px;
+    font-size: .78rem;
+    font-weight: 700;
+  }
+  .store-badge.auchan { background: var(--auchan-light); color: var(--auchan-color); }
+  .store-badge.superu { background: var(--superu-light); color: var(--superu-color); }
+  .store-badge.equal { background: #fef9c3; color: #854d0e; }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .card { padding: 16px 12px; }
+    th, td { padding: 7px 8px; }
+    .drag-handle { display: none; }
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: #1a202c;
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: var(--radius-sm);
+    font-size: .85rem;
+    font-weight: 600;
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all .3s ease;
+    z-index: 9999;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <h1>🛒 Comparateur <span class="auchan">Auchan</span> vs <span class="superu">Super U</span></h1>
+  <p>Sauvegarde automatique • Mise à jour en temps réel</p>
+</div>
+
+<!-- TABLEAU PRINCIPAL -->
+<div class="card">
+  <div class="card-title">
+    📋 Tableau des prix
+    <span class="badge" id="row-count">0 produits</span>
+  </div>
+
+  <div class="toolbar">
+    <button class="btn btn-primary" onclick="addRow()">＋ Ajouter un produit</button>
+    <button class="btn btn-auchan" onclick="sortByAuchan()">↑ Trier par Auchan</button>
+    <button class="btn btn-superu" onclick="sortBySuperU()">↑ Trier par Super U</button>
+    <button class="btn btn-ghost" onclick="exportJSON()">⬇ Exporter JSON</button>
+    <label class="btn btn-ghost" style="cursor:pointer;">
+      ⬆ Importer JSON
+      <input type="file" id="import-input" accept=".json" style="display:none" onchange="importJSON(event)">
+    </label>
+  </div>
+
+  <div class="table-wrap">
+    <table id="main-table">
+      <thead>
+        <tr>
+          <th style="width:32px"></th>
+          <th>Produit</th>
+          <th class="th-auchan">🔴 Auchan Parly 2</th>
+          <th class="th-superu">🔵 Super U Le Chesnay</th>
+          <th style="width:60px">Action</th>
+        </tr>
+      </thead>
+      <tbody id="main-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- TOTAUX -->
+<div class="card">
+  <div class="card-title">💰 Totaux du panier</div>
+  <div class="totals-grid">
+    <div class="total-box auchan">
+      <div class="total-label">Total Auchan</div>
+      <div class="total-value" id="total-auchan">0,00 €</div>
+    </div>
+    <div class="total-box superu">
+      <div class="total-label">Total Super U</div>
+      <div class="total-value" id="total-superu">0,00 €</div>
+    </div>
+    <div class="total-box economy">
+      <div class="total-label">Économie totale</div>
+      <div class="total-value" id="total-economy">0,00 €</div>
+    </div>
+  </div>
+</div>
+
+<!-- TABLEAU RECOMMANDATION -->
+<div class="card">
+  <div class="card-title">⭐ Produits à acheter dans le magasin le moins cher</div>
+  <div class="table-wrap">
+    <table id="reco-table">
+      <thead>
+        <tr>
+          <th>Produit</th>
+          <th>Magasin recommandé</th>
+          <th>Prix le moins cher</th>
+        </tr>
+      </thead>
+      <tbody id="reco-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- LISTES DE COURSES -->
+<div class="card">
+  <div class="card-title">🛍 Listes de courses optimisées</div>
+  <div class="lists-grid">
+    <div class="shop-list auchan">
+      <h3>🔴 Liste Auchan Parly 2</h3>
+      <ul id="list-auchan"></ul>
+      <div class="list-total" id="list-total-auchan" style="display:none">
+        <span>Total</span><span></span>
+      </div>
+    </div>
+    <div class="shop-list superu">
+      <h3>🔵 Liste Super U Le Chesnay</h3>
+      <ul id="list-superu"></ul>
+      <div class="list-total" id="list-total-superu" style="display:none">
+        <span>Total</span><span></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===================================================
+   ÉTAT & DONNÉES
+=================================================== */
+let rows = []; // [{id, product, auchan, superu}]
+let dragSrcIdx = null;
+
+/* ===================================================
+   INIT
+=================================================== */
+document.addEventListener('DOMContentLoaded', () => {
+  loadFromStorage();
+  if (rows.length === 0) {
+    // 5 lignes vides par défaut
+    for (let i = 0; i < 5; i++) addRow(false);
+  }
+  renderAll();
+});
+
+/* ===================================================
+   GESTION DES LIGNES
+=================================================== */
+function generateId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2);
+}
+
+function addRow(render = true) {
+  rows.push({ id: generateId(), product: '', auchan: '', superu: '' });
+  if (render) { renderAll(); save(); }
+}
+
+function deleteRow(id) {
+  rows = rows.filter(r => r.id !== id);
+  renderAll();
+  save();
+}
+
+/* ===================================================
+   RENDU PRINCIPAL
+=================================================== */
+
+// Appelé lors d'un ajout, suppression, tri, drag&drop, import :
+// reconstruit entièrement le tbody du tableau principal.
+function renderAll() {
+  rebuildMainTable();
+  renderRecoTable();
+  renderShoppingLists();
+  renderTotals();
+  document.getElementById('row-count').textContent = rows.length + ' produit' + (rows.length > 1 ? 's' : '');
+}
+
+// Appelé lors d'une frappe dans un input existant :
+// met à jour uniquement les couleurs de cellules et les sections secondaires,
+// SANS reconstruire les lignes du tableau principal (pas de perte de focus).
+function updateFromInput() {
+  updateMainTableColors();
+  renderRecoTable();
+  renderShoppingLists();
+  renderTotals();
+  document.getElementById('row-count').textContent = rows.length + ' produit' + (rows.length > 1 ? 's' : '');
+}
+
+// Reconstruction complète du tbody (DOM rebuild) — utilisée seulement quand
+// la structure des lignes change (ajout / suppression / tri / drag&drop / import).
+function rebuildMainTable() {
+  const tbody = document.getElementById('main-tbody');
+  tbody.innerHTML = '';
+
+  rows.forEach((row, idx) => {
+    const tr = buildRow(row, idx);
+    tbody.appendChild(tr);
+  });
+
+  // Applique les couleurs après construction
+  updateMainTableColors();
+}
+
+// Construit un élément <tr> pour une ligne de données.
+function buildRow(row, idx) {
+  const tr = document.createElement('tr');
+  tr.dataset.id = row.id;
+  tr.dataset.idx = idx;
+  tr.draggable = true;
+
+  // Drag handle
+  const tdHandle = document.createElement('td');
+  tdHandle.innerHTML = '<span class="drag-handle" title="Réordonner">⠿</span>';
+  tr.appendChild(tdHandle);
+
+  // Produit
+  const tdProduct = document.createElement('td');
+  const inputProduct = document.createElement('input');
+  inputProduct.type = 'text';
+  inputProduct.placeholder = 'Nom du produit…';
+  inputProduct.value = row.product;
+  inputProduct.addEventListener('input', e => {
+    row.product = e.target.value;
+    updateFromInput();
+    save();
+  });
+  tdProduct.appendChild(inputProduct);
+  tr.appendChild(tdProduct);
+
+  // Auchan
+  const tdAuchan = document.createElement('td');
+  tdAuchan.dataset.cell = 'auchan';
+  const inputAuchan = document.createElement('input');
+  inputAuchan.type = 'number';
+  inputAuchan.step = '0.01';
+  inputAuchan.min = '0';
+  inputAuchan.placeholder = '0,00';
+  inputAuchan.value = row.auchan;
+  inputAuchan.addEventListener('input', e => {
+    row.auchan = e.target.value;
+    updateFromInput();
+    save();
+  });
+  tdAuchan.appendChild(inputAuchan);
+  tr.appendChild(tdAuchan);
+
+  // Super U
+  const tdSuperu = document.createElement('td');
+  tdSuperu.dataset.cell = 'superu';
+  const inputSuperu = document.createElement('input');
+  inputSuperu.type = 'number';
+  inputSuperu.step = '0.01';
+  inputSuperu.min = '0';
+  inputSuperu.placeholder = '0,00';
+  inputSuperu.value = row.superu;
+  inputSuperu.addEventListener('input', e => {
+    row.superu = e.target.value;
+    updateFromInput();
+    save();
+  });
+  tdSuperu.appendChild(inputSuperu);
+  tr.appendChild(tdSuperu);
+
+  // Supprimer
+  const tdDel = document.createElement('td');
+  const btnDel = document.createElement('button');
+  btnDel.className = 'btn btn-danger btn-sm';
+  btnDel.textContent = '✕';
+  btnDel.title = 'Supprimer';
+  btnDel.addEventListener('click', () => deleteRow(row.id));
+  tdDel.appendChild(btnDel);
+  tr.appendChild(tdDel);
+
+  // Drag & drop events
+  tr.addEventListener('dragstart', onDragStart);
+  tr.addEventListener('dragover', onDragOver);
+  tr.addEventListener('drop', onDrop);
+  tr.addEventListener('dragend', onDragEnd);
+
+  return tr;
+}
+
+// Met à jour uniquement les classes CSS de coloration (cell-cheap) sur les
+// cellules existantes — aucune reconstruction de nœud, aucune perte de focus.
+function updateMainTableColors() {
+  const tbody = document.getElementById('main-tbody');
+  const trs = tbody.querySelectorAll('tr');
+
+  trs.forEach(tr => {
+    const id = tr.dataset.id;
+    const row = rows.find(r => r.id === id);
+    if (!row) return;
+
+    const a = parseFloat(row.auchan);
+    const s = parseFloat(row.superu);
+    const bothFilled = !isNaN(a) && row.auchan !== '' && !isNaN(s) && row.superu !== '';
+    const auchanCheap = bothFilled && a < s;
+    const superuCheap = bothFilled && s < a;
+
+    const tdAuchan = tr.querySelector('td[data-cell="auchan"]');
+    const tdSuperu = tr.querySelector('td[data-cell="superu"]');
+
+    if (tdAuchan) tdAuchan.classList.toggle('cell-cheap', auchanCheap);
+    if (tdSuperu) tdSuperu.classList.toggle('cell-cheap', superuCheap);
+  });
+}
+
+/* ===================================================
+   TABLEAU RECOMMANDATION
+=================================================== */
+function renderRecoTable() {
+  const tbody = document.getElementById('reco-tbody');
+  tbody.innerHTML = '';
+
+  const eligible = rows.filter(r => r.product.trim() !== '' && (r.auchan !== '' || r.superu !== ''));
+
+  if (eligible.length === 0) {
+    const tr = document.createElement('tr');
+    const td = document.createElement('td');
+    td.colSpan = 3;
+    td.innerHTML = '<span class="empty-msg">Renseignez des produits et leurs prix pour voir les recommandations.</span>';
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+    return;
+  }
+
+  eligible.forEach(row => {
+    const a = parseFloat(row.auchan);
+    const s = parseFloat(row.superu);
+    const aValid = !isNaN(a) && row.auchan !== '';
+    const sValid = !isNaN(s) && row.superu !== '';
+
+    let store = '', price = '', badgeClass = '';
+
+    if (aValid && sValid) {
+      if (a < s)       { store = 'Auchan Parly 2';      price = a; badgeClass = 'auchan'; }
+      else if (s < a)  { store = 'Super U Le Chesnay';  price = s; badgeClass = 'superu'; }
+      else             { store = 'Égalité';              price = a; badgeClass = 'equal'; }
+    } else if (aValid) { store = 'Auchan Parly 2';      price = a; badgeClass = 'auchan'; }
+    else               { store = 'Super U Le Chesnay';  price = s; badgeClass = 'superu'; }
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${escHtml(row.product)}</td>
+      <td><span class="store-badge ${badgeClass}">${escHtml(store)}</span></td>
+      <td style="text-align:right;font-weight:700;">${formatPrice(price)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+/* ===================================================
+   LISTES DE COURSES
+=================================================== */
+function renderShoppingLists() {
+  const ulAuchan = document.getElementById('list-auchan');
+  const ulSuperu = document.getElementById('list-superu');
+  const totAuchan = document.getElementById('list-total-auchan');
+  const totSuperu = document.getElementById('list-total-superu');
+
+  ulAuchan.innerHTML = '';
+  ulSuperu.innerHTML = '';
+
+  let sumA = 0, sumS = 0;
+  let countA = 0, countS = 0;
+
+  rows.forEach(row => {
+    if (!row.product.trim()) return;
+    const a = parseFloat(row.auchan);
+    const s = parseFloat(row.superu);
+    const aValid = !isNaN(a) && row.auchan !== '';
+    const sValid = !isNaN(s) && row.superu !== '';
+    if (!aValid && !sValid) return;
+
+    if (aValid && sValid) {
+      if (a <= s) { appendListItem(ulAuchan, row.product, a); sumA += a; countA++; }
+      else        { appendListItem(ulSuperu, row.product, s); sumS += s; countS++; }
+    } else if (aValid) {
+      appendListItem(ulAuchan, row.product, a); sumA += a; countA++;
+    } else {
+      appendListItem(ulSuperu, row.product, s); sumS += s; countS++;
+    }
+  });
+
+  if (countA === 0) ulAuchan.innerHTML = '<li><span class="empty-msg">Aucun produit.</span></li>';
+  if (countS === 0) ulSuperu.innerHTML = '<li><span class="empty-msg">Aucun produit.</span></li>';
+
+  if (countA > 0) {
+    totAuchan.style.display = 'flex';
+    totAuchan.querySelector('span:last-child').textContent = formatPrice(sumA);
+  } else { totAuchan.style.display = 'none'; }
+
+  if (countS > 0) {
+    totSuperu.style.display = 'flex';
+    totSuperu.querySelector('span:last-child').textContent = formatPrice(sumS);
+  } else { totSuperu.style.display = 'none'; }
+}
+
+function appendListItem(ul, product, price) {
+  const li = document.createElement('li');
+  li.innerHTML = `<span>${escHtml(product)}</span><span class="item-price">${formatPrice(price)}</span>`;
+  ul.appendChild(li);
+}
+
+/* ===================================================
+   TOTAUX
+=================================================== */
+function renderTotals() {
+  let sumA = 0, sumS = 0;
+  rows.forEach(row => {
+    const a = parseFloat(row.auchan);
+    const s = parseFloat(row.superu);
+    if (!isNaN(a) && row.auchan !== '') sumA += a;
+    if (!isNaN(s) && row.superu !== '') sumS += s;
+  });
+  const economy = Math.abs(sumA - sumS);
+  document.getElementById('total-auchan').textContent  = formatPrice(sumA);
+  document.getElementById('total-superu').textContent  = formatPrice(sumS);
+  document.getElementById('total-economy').textContent = formatPrice(economy);
+}
+
+/* ===================================================
+   TRI
+=================================================== */
+function sortByAuchan() {
+  rows.sort((a, b) => {
+    const va = parseFloat(a.auchan);
+    const vb = parseFloat(b.auchan);
+    const aOk = !isNaN(va) && a.auchan !== '';
+    const bOk = !isNaN(vb) && b.auchan !== '';
+    if (!aOk && !bOk) return 0;
+    if (!aOk) return 1;
+    if (!bOk) return -1;
+    return va - vb;
+  });
+  renderAll(); save(); showToast('Trié par prix Auchan ↑');
+}
+
+function sortBySuperU() {
+  rows.sort((a, b) => {
+    const va = parseFloat(a.superu);
+    const vb = parseFloat(b.superu);
+    const aOk = !isNaN(va) && a.superu !== '';
+    const bOk = !isNaN(vb) && b.superu !== '';
+    if (!aOk && !bOk) return 0;
+    if (!aOk) return 1;
+    if (!bOk) return -1;
+    return va - vb;
+  });
+  renderAll(); save(); showToast('Trié par prix Super U ↑');
+}
+
+/* ===================================================
+   DRAG & DROP
+=================================================== */
+function onDragStart(e) {
+  dragSrcIdx = parseInt(e.currentTarget.dataset.idx);
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+function onDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  // Highlight target
+  document.querySelectorAll('#main-tbody tr').forEach(r => r.classList.remove('drag-over'));
+  e.currentTarget.classList.add('drag-over');
+}
+
+function onDrop(e) {
+  e.preventDefault();
+  const targetIdx = parseInt(e.currentTarget.dataset.idx);
+  if (dragSrcIdx === null || dragSrcIdx === targetIdx) return;
+  const moved = rows.splice(dragSrcIdx, 1)[0];
+  rows.splice(targetIdx, 0, moved);
+  renderAll(); save();
+}
+
+function onDragEnd(e) {
+  e.currentTarget.classList.remove('dragging');
+  document.querySelectorAll('#main-tbody tr').forEach(r => r.classList.remove('drag-over'));
+  dragSrcIdx = null;
+}
+
+/* ===================================================
+   SAUVEGARDE AUTOMATIQUE
+=================================================== */
+function save() {
+  try {
+    localStorage.setItem('comparateur_rows', JSON.stringify(rows));
+  } catch(e) { /* Silencieux */ }
+}
+
+function loadFromStorage() {
+  try {
+    const stored = localStorage.getItem('comparateur_rows');
+    if (stored) rows = JSON.parse(stored);
+  } catch(e) { rows = []; }
+}
+
+/* ===================================================
+   EXPORT / IMPORT JSON
+=================================================== */
+function exportJSON() {
+  const data = { version: 1, exportedAt: new Date().toISOString(), rows };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'comparateur.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Données exportées ✓');
+}
+
+function importJSON(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (data.rows && Array.isArray(data.rows)) {
+        rows = data.rows;
+        renderAll();
+        save();
+        showToast('Données importées ✓');
+      } else {
+        showToast('Format JSON invalide ✗');
+      }
+    } catch {
+      showToast('Erreur de lecture JSON ✗');
+    }
+    // Reset input so the same file can be re-imported
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+/* ===================================================
+   UTILITAIRES
+=================================================== */
+function formatPrice(val) {
+  if (val === '' || val === null || val === undefined || isNaN(parseFloat(val))) return '—';
+  return parseFloat(val).toFixed(2).replace('.', ',') + ' €';
+}
+
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
