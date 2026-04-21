@@ -341,13 +341,13 @@ tr.drag-over td { border-top: 2px solid var(--accent); }
 .cell-cheap input { font-weight: 700; color: var(--green-text); }
 
 /* ============================================================
-   CHECKBOX MODE COMPACT
-   Masquée partout sauf quand body.compact-mode est actif.
-   Cette règle globale (hors media query) s'applique à PC et
-   mobile. Le bloc compact-mode ci-dessous la réactive sur mobile.
+   CHECKBOX MODE COMPACT — MASQUAGE
+   Sur PC : cellule masquée via media query min-width.
+   Sur mobile normal (sans .compact-mode) : masquée aussi.
+   En mode compact mobile : réactivée dans le bloc compact ci-bas.
 ============================================================ */
-body:not(.compact-mode) .compact-checkbox {
-  display: none !important;
+@media (min-width: 601px) {
+  td.td-compact-check { display: none !important; }
 }
 
 /* ============================================================
@@ -440,6 +440,11 @@ body:not(.compact-mode) .compact-checkbox {
 
   /* Masquer la cellule conteneur aussi (en plus de la checkbox elle-même) */
   body:not(.compact-mode) td.td-compact-check { display: none !important; }
+
+  /* Masquer la cellule conteneur aussi (en plus de la checkbox elle-même) */
+  body:not(.compact-mode) td.td-compact-check { display: none !important; }
+  /* Masquer la checkbox en mode normal mobile */
+  body:not(.compact-mode) .compact-checkbox   { display: none !important; }
 
   #main-table th               {
     font-size: .65rem !important;
