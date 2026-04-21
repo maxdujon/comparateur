@@ -342,22 +342,37 @@ tr.drag-over td { border-top: 2px solid var(--accent); }
 
 /* ============================================================
    CHECKBOX DU MODE COMPACT
-   — TOUJOURS masquée en mode normal (quel que soit le media)
-   — Uniquement visible quand body.compact-mode est actif
+   — Masquée partout sauf quand .compact-mode est actif (mobile)
 ============================================================ */
 
-/* Masquage global en mode normal — ciblé par la CELLULE td.td-compact-check */
+/* Masquage global : s'applique sur tous les écrans */
 td.td-compact-check {
   display: none !important;
 }
 
 /* ============================================================
-   MOBILE ≤ 600 px
+   RESTAURATION EXPLICITE PC (≥ 601 px)
+   Garantit que tr et td restent en affichage table natif,
+   quelles que soient les règles qui auraient pu les écraser.
+============================================================ */
+@media (min-width: 601px) {
+  #main-table tr,
+  #main-table thead tr         { display: table-row !important; }
+  #main-table th,
+  #main-table td               { display: table-cell !important; }
+}
+
+/* ============================================================
+   MOBILE ≤ 600 px — MODE NORMAL (sans .compact-mode)
+   Les tr/td restent en display table natif ; seules des
+   propriétés de mise en page (taille, padding) sont ajustées.
 ============================================================ */
 @media (max-width: 600px) {
 
+  /* Layout tableau : auto pour laisser flex mobile fonctionner */
   #main-table                  { table-layout: auto !important; width: 100% !important; }
 
+  /* Lignes en flex en mode normal mobile également */
   #main-table thead tr,
   #main-tbody tr               {
     display: flex !important;
