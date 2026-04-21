@@ -341,25 +341,18 @@ tr.drag-over td { border-top: 2px solid var(--accent); }
 .cell-cheap input { font-weight: 700; color: var(--green-text); }
 
 /* ============================================================
-   CHECKBOX DU MODE COMPACT
-   — Masquée partout sauf quand .compact-mode est actif (mobile)
-============================================================ */
-
-/* Masquage global : s'applique sur tous les écrans */
-td.td-compact-check {
-  display: none !important;
-}
-
-/* ============================================================
    RESTAURATION EXPLICITE PC (≥ 601 px)
-   Garantit que tr et td restent en affichage table natif,
-   quelles que soient les règles qui auraient pu les écraser.
+   Remet tr/td en affichage table natif.
+   La colonne .td-compact-check est masquée ICI avec une
+   spécificité suffisante pour gagner sur display:table-cell.
 ============================================================ */
 @media (min-width: 601px) {
   #main-table tr,
-  #main-table thead tr         { display: table-row !important; }
+  #main-table thead tr              { display: table-row !important; }
   #main-table th,
-  #main-table td               { display: table-cell !important; }
+  #main-table td                    { display: table-cell !important; }
+  /* Checkbox compact : masquée sur PC, après la règle table-cell */
+  #main-table td.td-compact-check   { display: none !important; }
 }
 
 /* ============================================================
@@ -463,6 +456,8 @@ td.td-compact-check {
     padding: 6px 4px;
     border-bottom: 1.5px solid var(--border) !important;
   }
+  /* Checkbox compact masquée en mobile normal (sans .compact-mode) */
+  #main-table td.td-compact-check { display: none !important; }
   #main-tbody tr               {
     border-bottom: 1.5px solid var(--border) !important;
   }
