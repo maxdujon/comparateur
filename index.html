@@ -226,14 +226,8 @@ body {
 
 /* ============================================================
    TABLE
-   La clé du problème mobile : table-layout:fixed + largeurs px
-   sur les <col>.  Le navigateur NE redistribue PAS l'espace selon
-   le contenu — il applique exactement ce qu'on lui dit.
-   La colonne produit (col-product) n'a pas de width déclarée :
-   elle reçoit automatiquement tout l'espace restant (~60 %).
 ============================================================ */
 .table-wrap {
-  /* Pas de scroll horizontal : le layout fixe s'y adapte */
   overflow-x: hidden;
 }
 
@@ -244,13 +238,9 @@ table {
 }
 
 #main-table {
-  /* CRUCIAL : force le respect des largeurs de colonne */
   table-layout: fixed;
 }
 
-/* col-handle + col-del = px fixes
-   col-price = 80px fixes
-   col-product = pas de width → prend tout le reste */
 #main-table col.col-handle { width: 28px; }
 #main-table col.col-price  { width: 80px; }
 #main-table col.col-del    { width: 36px; }
@@ -275,27 +265,23 @@ td {
   padding: 5px 5px;
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
-  /* overflow:hidden est indispensable avec table-layout:fixed */
   overflow: hidden;
 }
 tr:last-child td { border-bottom: none; }
 tr:hover td { background: var(--surface2); }
 
-/* Colonne PRODUIT : retour à la ligne libre */
 td.td-product {
   white-space: normal;
   word-break: break-word;
   overflow-wrap: anywhere;
 }
 
-/* Colonnes PRIX : une seule ligne, centré */
 td[data-cell="auchan"],
 td[data-cell="superu"] {
   white-space: nowrap;
   text-align: center;
 }
 
-/* Input PRODUIT */
 td input[type="text"] {
   display: block;
   width: 100%;
@@ -308,12 +294,10 @@ td input[type="text"] {
   color: var(--text);
   transition: border-color .15s, background .15s;
   min-height: 40px;
-  /* Permettre au texte de s'étaler sur plusieurs lignes visuellement */
   white-space: normal;
   overflow-wrap: anywhere;
 }
 
-/* Input PRIX — taille adaptée aux 80px de la colonne */
 td input[type="number"] {
   display: block;
   width: 100%;
@@ -327,7 +311,6 @@ td input[type="number"] {
   text-align: center;
   transition: border-color .15s, background .15s;
   min-height: 40px;
-  /* Masquer les flèches natives sur mobile (elles prennent de la place) */
   -moz-appearance: textfield;
 }
 td input[type="number"]::-webkit-outer-spin-button,
@@ -340,7 +323,6 @@ td input:focus {
   box-shadow: 0 0 0 3px rgba(109,40,217,.12);
 }
 
-/* Drag handle */
 .drag-handle {
   cursor: grab;
   color: var(--text-faint);
@@ -355,43 +337,27 @@ td input:focus {
 tr.dragging { opacity: .4; }
 tr.drag-over td { border-top: 2px solid var(--accent); }
 
-/* Prix le moins cher */
 .cell-cheap { background: var(--green-bg) !important; }
 .cell-cheap input { font-weight: 700; color: var(--green-text); }
 
-/* ══════════════════════════════════════════════════════════════
-   MOBILE ≤ 600 px  —  mise en page tableau
-   ──────────────────────────────────────────────────────────────
-   RÈGLE ABSOLUE : on cible UNIQUEMENT par classe CSS et par
-   l'attribut data-cell. JAMAIS par nth-child.
-   Raison : nth-child compte les cellules display:none comme
-   présentes → décalage qui écrase la colonne Produit.
+/* ============================================================
+   CHECKBOX DU MODE COMPACT
+   — TOUJOURS masquée en mode normal (quel que soit le media)
+   — Uniquement visible quand body.compact-mode est actif
+============================================================ */
 
-   Budget largeur sur 390 px (iPhone 14) :
-     col-handle  →  0 px  (masquée, contenu caché)
-     col-price   → 72 px  × 2  = 144 px
-     col-del     → 38 px
-     col-product →  390 − 144 − 38 = 208 px  ✓ lisible
-══════════════════════════════════════════════════════════════ */
+/* Masquage global en mode normal — ciblé par la CELLULE td.td-compact-check */
+td.td-compact-check {
+  display: none !important;
+}
+
+/* ============================================================
+   MOBILE ≤ 600 px
+============================================================ */
 @media (max-width: 600px) {
 
-  /* ══════════════════════════════════════════════════════════════
-     LAYOUT FLEX SUR LES LIGNES
-     ──────────────────────────────────────────────────────────────
-     On abandonne table-layout:fixed au profit d'un display:flex
-     sur chaque tr / thead tr.
-     Avantage : flex:1 sur .td-product garantit qu'elle prend tout
-     l'espace restant, sans calcul de largeur résiduelle fragile.
-     Les colonnes à largeur fixe (prix, del) sont déclarées avec
-     width + flex-shrink:0 pour ne jamais rétrécir.
-     On cible UNIQUEMENT par classes CSS — jamais nth-child —
-     pour rester insensible à l'ordre réel des cellules.
-  ══════════════════════════════════════════════════════════════ */
-
-  /* ── Neutraliser table-layout:fixed en mobile ─────────────── */
   #main-table                  { table-layout: auto !important; width: 100% !important; }
 
-  /* ── Transformer chaque ligne en conteneur flex ────────────── */
   #main-table thead tr,
   #main-tbody tr               {
     display: flex !important;
@@ -399,7 +365,6 @@ tr.drag-over td { border-top: 2px solid var(--accent); }
     width: 100% !important;
   }
 
-  /* ── Handle drag : masqué, largeur nulle ───────────────────── */
   th.th-handle,
   td.td-handle                 {
     display: none !important;
@@ -410,11 +375,10 @@ tr.drag-over td { border-top: 2px solid var(--accent); }
   }
   .drag-handle                 { display: none !important; }
 
-  /* ── Colonne PRODUIT : flex:1 — prend tout l'espace restant ── */
   th.th-product,
   td.td-product                {
     flex: 1 1 0 !important;
-    min-width: 0 !important;          /* indispensable pour flex:1 */
+    min-width: 0 !important;
     overflow: visible !important;
     white-space: normal !important;
     word-break: break-word !important;
@@ -431,7 +395,6 @@ tr.drag-over td { border-top: 2px solid var(--accent); }
     border-radius: var(--radius-xs);
   }
 
-  /* ── Colonnes prix : largeur fixe 76 px, sans rétrécissement ── */
   th.th-a,
   th.th-s,
   td[data-cell="auchan"],
@@ -455,7 +418,6 @@ tr.drag-over td { border-top: 2px solid var(--accent); }
     border-radius: var(--radius-xs);
   }
 
-  /* ── Colonne ✕ : largeur fixe 40 px ───────────────────────── */
   td.td-del                    {
     flex: none !important;
     width: 40px !important;
@@ -474,7 +436,6 @@ tr.drag-over td { border-top: 2px solid var(--accent); }
     border-radius: var(--radius-xs) !important;
   }
 
-  /* ── En-têtes ──────────────────────────────────────────────── */
   #main-table th               {
     font-size: .65rem !important;
     padding: 10px 4px !important;
@@ -483,24 +444,19 @@ tr.drag-over td { border-top: 2px solid var(--accent); }
   }
   th.th-product                { text-align: left !important; }
 
-  /* ── Cellules générales ─────────────────────────────────────── */
   #main-table td               {
     padding: 6px 4px;
     border-bottom: 1.5px solid var(--border) !important;
-    /* overflow:hidden ne s'applique pas à td-product (déjà override) */
   }
-  /* Séparateur de ligne sur le tr plutôt que td (plus fiable en flex) */
   #main-tbody tr               {
     border-bottom: 1.5px solid var(--border) !important;
   }
   #main-tbody tr:last-child    { border-bottom: none !important; }
   #main-tbody tr td            { border-bottom: none !important; }
 
-  /* Alternance subtile */
   #main-tbody tr:nth-child(even) { background: var(--surface2); }
   #main-tbody tr:hover           { background: var(--bg2) !important; }
 
-  /* ── Toolbar : boutons plus grands ─────────────────────────── */
   .toolbar                     {
     gap: 10px !important;
     flex-wrap: wrap !important;
@@ -514,7 +470,6 @@ tr.drag-over td { border-top: 2px solid var(--accent); }
     justify-content: center;
   }
 
-  /* ── Card padding ───────────────────────────────────────────── */
   .card                        { padding: 16px 10px; }
 }
 
@@ -690,15 +645,10 @@ tr.drag-over td { border-top: 2px solid var(--accent); }
    BOUTON MODE COMPACT — visible uniquement en mobile
 ============================================================ */
 .compact-btn {
-  display: none; /* masqué sur PC */
+  display: none;
 }
 
-/* ============================================================
-   MODE COMPACT — uniquement en mobile (max-width: 600px)
-============================================================ */
 @media (max-width: 600px) {
-
-  /* Afficher le bouton compact */
   .compact-btn {
     display: flex;
     align-items: center;
@@ -722,12 +672,48 @@ tr.drag-over td { border-top: 2px solid var(--accent); }
     color: #fff;
     border-color: var(--accent);
   }
+}
 
-  /* ──────────────────────────────────────────────────────────
-     MODE COMPACT ACTIVÉ (.compact-mode sur le body)
-  ────────────────────────────────────────────────────────── */
+/* ============================================================
+   MODE COMPACT — uniquement en mobile (max-width: 600px)
+   Règles de stabilisation : pas de changement de hauteur,
+   couleur ou layout lors du check/uncheck.
+============================================================ */
+@media (max-width: 600px) {
 
-  /* Masquer colonnes prix, bouton supprimer, toolbar */
+  /* ── Masquer sections inutiles en mode courses ─────────────── */
+  body.compact-mode #card-totaux,
+  body.compact-mode #card-reco,
+  body.compact-mode .toolbar           { display: none !important; }
+
+  /* ── Chaque ligne : flex stable, hauteur fixe ──────────────── */
+  body.compact-mode #main-table thead tr,
+  body.compact-mode #main-tbody tr     {
+    display: flex !important;
+    align-items: center !important;
+    min-height: 56px !important;
+    /* PAS de transition sur height/padding/background */
+    transition: none !important;
+    /* Fond fixe : jamais modifié lors du check */
+    background: var(--surface) !important;
+  }
+  body.compact-mode #main-tbody tr:nth-child(even) {
+    background: var(--surface2) !important;
+  }
+  /* Retour tactile : uniquement opacity, jamais background */
+  body.compact-mode #main-tbody tr:active {
+    opacity: .85 !important;
+  }
+
+  /* ── Toutes les td : fond hérité, pas de transition ────────── */
+  body.compact-mode #main-tbody tr td  {
+    background: inherit !important;
+    transition: none !important;
+    padding: 0 !important;
+    border-bottom: none !important;
+  }
+
+  /* ── Masquer colonnes prix, bouton supprimer, handle ───────── */
   body.compact-mode th.th-a,
   body.compact-mode th.th-s,
   body.compact-mode td[data-cell="auchan"],
@@ -736,92 +722,91 @@ tr.drag-over td { border-top: 2px solid var(--accent); }
   body.compact-mode th.th-handle,
   body.compact-mode td.td-handle       { display: none !important; }
 
-  /* Masquer sections inutiles en mode courses */
-  body.compact-mode #card-totaux,
-  body.compact-mode #card-reco,
-  body.compact-mode .toolbar           { display: none !important; }
-
-  /* Chaque ligne devient un flex-container */
-  body.compact-mode #main-table thead tr,
-  body.compact-mode #main-tbody tr     {
-    display: flex !important;
-    align-items: center !important;
-    min-height: 60px;
-    padding: 4px 0;
-    border-bottom: 1.5px solid var(--border);
-    gap: 0;
-  }
-  body.compact-mode #main-tbody tr:last-child { border-bottom: none; }
-
-  /* Colonne produit en flex:1 */
+  /* ── Colonne produit en flex:1 ────────────────────────────── */
   body.compact-mode td.td-product,
   body.compact-mode th.th-product      {
     flex: 1 1 0 !important;
     min-width: 0 !important;
     overflow: visible !important;
-    padding: 10px 12px !important;
+    padding: 0 8px 0 12px !important;
   }
 
-  /* Input produit : grosse typo, lecture seule en mode courses */
+  /* ── Input produit : grande typo, non-éditable en mode courses */
   body.compact-mode td.td-product input[type="text"] {
     font-size: 1.05rem !important;
     font-weight: 600 !important;
-    min-height: 52px !important;
-    padding: 12px 8px !important;
+    min-height: 56px !important;
+    padding: 0 8px !important;
     border-color: transparent !important;
     background: transparent !important;
     pointer-events: none;
     cursor: default;
+    /* Pas de transition sur ces propriétés */
+    transition: none !important;
   }
 
-  /* Retour tactile sur tap */
-  body.compact-mode #main-tbody tr {
-    cursor: pointer;
-    transition: background .12s;
-  }
-  body.compact-mode #main-tbody tr:active { background: var(--bg2) !important; }
-
-  /* Ligne cochée */
+  /* ── Ligne cochée : barré + opacité, SANS changer le fond ──── */
   body.compact-mode #main-tbody tr.compact-done td.td-product input {
     text-decoration: line-through !important;
     color: var(--text-faint) !important;
     opacity: .55;
   }
-  body.compact-mode #main-tbody tr.compact-done {
-    background: var(--surface2) !important;
-    opacity: .75;
-  }
+  /* On n'applique PAS de background sur tr.compact-done
+     pour éviter tout flash visuel */
 
-  /* Cellule checkbox — colonne à droite, taille tactile */
-  body.compact-mode .compact-check-cell {
+  /* ── Séparateur de ligne ────────────────────────────────────── */
+  body.compact-mode #main-tbody tr     {
+    border-bottom: 1.5px solid var(--border) !important;
+  }
+  body.compact-mode #main-tbody tr:last-child { border-bottom: none !important; }
+
+  /* ──────────────────────────────────────────────────────────────
+     CELLULE CHECKBOX COMPACTE
+     Visible uniquement quand body.compact-mode est actif.
+     En mode normal, td.td-compact-check reste display:none
+     (règle globale au-dessus du media query).
+  ────────────────────────────────────────────────────────────── */
+  body.compact-mode td.td-compact-check {
     display: flex !important;
-    align-items: center;
-    justify-content: center;
+    align-items: center !important;
+    justify-content: center !important;
     flex: none !important;
     width: 56px !important;
     min-width: 56px !important;
+    max-width: 56px !important;
     padding: 0 10px !important;
-    border: none !important;
+    background: inherit !important;
+    transition: none !important;
+    overflow: visible !important;
   }
-  body.compact-mode .compact-check {
+
+  /* La checkbox elle-même */
+  body.compact-mode .compact-checkbox {
     width: 28px !important;
     height: 28px !important;
     min-width: 28px !important;
+    flex-shrink: 0 !important;
     border-radius: 8px !important;
     border: 2.5px solid var(--border) !important;
     cursor: pointer !important;
     appearance: none !important;
     -webkit-appearance: none !important;
     background: var(--surface) !important;
-    transition: all .15s !important;
+    /* Aucune transition pour éviter tout saut visuel */
+    transition: none !important;
     position: relative !important;
-    flex-shrink: 0 !important;
+    display: block !important;
+    /* Pas de box-shadow, outline, ni changement de fond sur la ligne parente */
+    outline: none !important;
+    box-shadow: none !important;
   }
-  body.compact-mode .compact-check:checked {
+  body.compact-mode .compact-checkbox:checked {
     background: var(--accent) !important;
     border-color: var(--accent) !important;
+    /* Pas de transition */
+    transition: none !important;
   }
-  body.compact-mode .compact-check:checked::after {
+  body.compact-mode .compact-checkbox:checked::after {
     content: '';
     position: absolute;
     left: 7px; top: 3px;
@@ -831,17 +816,17 @@ tr.drag-over td { border-top: 2px solid var(--accent); }
     transform: rotate(45deg);
   }
 
-  /* En-tête compact */
+  /* ── En-tête compact ────────────────────────────────────────── */
   body.compact-mode #main-table thead tr {
-    min-height: 40px;
-    border-bottom: 2px solid var(--border);
+    min-height: 40px !important;
+    border-bottom: 2px solid var(--border) !important;
   }
   body.compact-mode th.th-product {
     font-size: .75rem !important;
     padding: 10px 12px !important;
   }
 
-  /* Badge "Mode courses" dans le titre de la card */
+  /* ── Badge "Mode courses" dans le titre de la card ──────────── */
   body.compact-mode #card-tableau .card-title::after {
     content: '🛒 Mode courses';
     font-size: .7rem;
@@ -894,13 +879,6 @@ tr.drag-over td { border-top: 2px solid var(--accent); }
   </div>
 
   <div class="table-wrap">
-    <!--
-      colgroup + table-layout:fixed = largeurs absolument respectées.
-      col-product n'a pas de width → reçoit tout l'espace restant.
-      Sur 360px : 28 + [produit] + 80 + 80 + 36 = produit ≈ 136px (~38%)
-      Sur mobile sans handle (28px masqué) : produit ≈ 164px (~46%)
-      → suffisant pour lire le texte, avec retour à la ligne.
-    -->
     <table id="main-table">
       <colgroup>
         <col class="col-handle">
@@ -1008,14 +986,13 @@ const app    = initializeApp(firebaseConfig);
 const db     = getFirestore(app);
 const docRef = doc(db, 'etat', 'global');
 
-/* Persistance hors-ligne via IndexedDB */
 enableIndexedDbPersistence(db).catch(() => {});
 
 /* ============================================================
    ÉTAT GLOBAL
 ============================================================ */
-let rows           = [];    // [{id, product, auchan, superu}]
-let checked        = {};    // {"auchan_NomProduit": true, ...}
+let rows           = [];
+let checked        = {};
 let dark           = false;
 let dragSrcIdx     = null;
 let ignoreSnapshot = false;
@@ -1146,28 +1123,6 @@ window.toggleTheme = function() { setTheme(!dark); };
 ============================================================ */
 let compactMode = false;
 
-window.toggleCompact = function() {
-  compactMode = !compactMode;
-  document.body.classList.toggle('compact-mode', compactMode);
-  const btn = document.getElementById('compact-btn');
-  if (btn) {
-    btn.classList.toggle('active', compactMode);
-    btn.textContent = compactMode ? '✕ Quitter' : '📋 Compact';
-  }
-  // Restaurer l'état des checkboxes compactes depuis compactChecked
-  if (compactMode) {
-    document.querySelectorAll('#main-tbody tr').forEach(tr => {
-      const cb = tr.querySelector('.compact-check');
-      if (cb) {
-        const key = 'compact_' + (tr.dataset.id || '');
-        cb.checked = !!compactChecked[key];
-        tr.classList.toggle('compact-done', cb.checked);
-      }
-    });
-  }
-  try { localStorage.setItem('comparateur_compact', JSON.stringify(compactMode)); } catch(_) {}
-};
-
 // Stockage local des cases cochées en mode compact (indépendant de Firebase)
 let compactChecked = {};
 try {
@@ -1179,7 +1134,27 @@ function saveCompactChecked() {
   try { localStorage.setItem('comparateur_compact_checked', JSON.stringify(compactChecked)); } catch(_) {}
 }
 
-
+window.toggleCompact = function() {
+  compactMode = !compactMode;
+  document.body.classList.toggle('compact-mode', compactMode);
+  const btn = document.getElementById('compact-btn');
+  if (btn) {
+    btn.classList.toggle('active', compactMode);
+    btn.textContent = compactMode ? '✕ Quitter' : '📋 Compact';
+  }
+  // Restaurer l'état des checkboxes compactes depuis compactChecked
+  if (compactMode) {
+    document.querySelectorAll('#main-tbody tr').forEach(tr => {
+      const cb = tr.querySelector('.compact-checkbox');
+      if (cb) {
+        const key = 'compact_' + (tr.dataset.id || '');
+        cb.checked = !!compactChecked[key];
+        tr.classList.toggle('compact-done', cb.checked);
+      }
+    });
+  }
+  try { localStorage.setItem('comparateur_compact', JSON.stringify(compactMode)); } catch(_) {}
+};
 
 /* ============================================================
    GESTION DES LIGNES
@@ -1240,13 +1215,13 @@ function buildRow(row, idx) {
   tr.dataset.idx = idx;
   tr.draggable   = true;
 
-  // Handle drag
+  // ── Drag handle ──────────────────────────────────────────────
   const tdH = document.createElement('td');
   tdH.className = 'td-handle';
   tdH.innerHTML = '<span class="drag-handle" title="Réordonner">⠿</span>';
   tr.appendChild(tdH);
 
-  // Produit
+  // ── Produit ──────────────────────────────────────────────────
   const tdP = document.createElement('td');
   tdP.className = 'td-product';
   const inP = document.createElement('input');
@@ -1261,19 +1236,19 @@ function buildRow(row, idx) {
   tdP.appendChild(inP);
   tr.appendChild(tdP);
 
-  // Prix Auchan
+  // ── Prix Auchan ───────────────────────────────────────────────
   const tdA = document.createElement('td');
   tdA.dataset.cell = 'auchan';
   tdA.appendChild(makeNumberInput(row, 'auchan'));
   tr.appendChild(tdA);
 
-  // Prix Super U
+  // ── Prix Super U ──────────────────────────────────────────────
   const tdS = document.createElement('td');
   tdS.dataset.cell = 'superu';
   tdS.appendChild(makeNumberInput(row, 'superu'));
   tr.appendChild(tdS);
 
-  // Bouton supprimer
+  // ── Bouton supprimer ──────────────────────────────────────────
   const tdD = document.createElement('td');
   tdD.className = 'td-del';
   const btn = document.createElement('button');
@@ -1284,22 +1259,31 @@ function buildRow(row, idx) {
   tdD.appendChild(btn);
   tr.appendChild(tdD);
 
-  // Cellule checkbox mode compact
+  // ── Cellule checkbox mode compact ─────────────────────────────
+  // Cette cellule est TOUJOURS créée dans le DOM mais masquée en
+  // mode normal via CSS (td.td-compact-check { display:none }).
+  // Elle devient visible uniquement quand body.compact-mode est actif.
   const tdCC = document.createElement('td');
-  tdCC.className = 'compact-check-cell';
+  tdCC.className = 'td-compact-check';
   const cc = document.createElement('input');
-  cc.type = 'checkbox';
-  cc.className = 'compact-check';
-  const ccKey = 'compact_' + row.id;
-  cc.checked = !!compactChecked[ccKey];
+  cc.type      = 'checkbox';
+  cc.className = 'compact-checkbox';
+  const ccKey  = 'compact_' + row.id;
+  cc.checked   = !!compactChecked[ccKey];
+
   cc.addEventListener('change', () => {
+    // Mettre à jour l'état coché sans modifier le fond de la ligne
     compactChecked[ccKey] = cc.checked;
     tr.classList.toggle('compact-done', cc.checked);
     saveCompactChecked();
+    // Empêcher la propagation pour ne pas déclencher d'autres handlers
+    return false;
   });
+
   tdCC.appendChild(cc);
   tr.appendChild(tdCC);
 
+  // ── Drag & drop ───────────────────────────────────────────────
   tr.addEventListener('dragstart', onDragStart);
   tr.addEventListener('dragover',  onDragOver);
   tr.addEventListener('drop',      onDrop);
