@@ -341,31 +341,25 @@ tr.drag-over td { border-top: 2px solid var(--accent); }
 .cell-cheap input { font-weight: 700; color: var(--green-text); }
 
 /* ============================================================
-   RESTAURATION EXPLICITE PC (≥ 601 px)
-   Remet tr/td en affichage table natif.
-   La colonne .td-compact-check est masquée ICI avec une
-   spécificité suffisante pour gagner sur display:table-cell.
+   CHECKBOX MODE COMPACT
+   Masquée partout sauf quand body.compact-mode est actif.
+   Cette règle globale (hors media query) s'applique à PC et
+   mobile. Le bloc compact-mode ci-dessous la réactive sur mobile.
 ============================================================ */
-@media (min-width: 601px) {
-  #main-table tr,
-  #main-table thead tr              { display: table-row !important; }
-  #main-table th,
-  #main-table td                    { display: table-cell !important; }
-  /* Checkbox compact : masquée sur PC, après la règle table-cell */
-  #main-table td.td-compact-check   { display: none !important; }
+body:not(.compact-mode) .compact-checkbox {
+  display: none !important;
 }
 
 /* ============================================================
-   MOBILE ≤ 600 px — MODE NORMAL (sans .compact-mode)
-   Les tr/td restent en display table natif ; seules des
-   propriétés de mise en page (taille, padding) sont ajustées.
+   MOBILE ≤ 600 px — MODE NORMAL
+   flex sur les lignes, colonnes redimensionnées.
+   La cellule td-compact-check est masquée via la règle
+   body:not(.compact-mode) ci-dessus — pas besoin de la répéter.
 ============================================================ */
 @media (max-width: 600px) {
 
-  /* Layout tableau : auto pour laisser flex mobile fonctionner */
   #main-table                  { table-layout: auto !important; width: 100% !important; }
 
-  /* Lignes en flex en mode normal mobile également */
   #main-table thead tr,
   #main-tbody tr               {
     display: flex !important;
@@ -444,6 +438,9 @@ tr.drag-over td { border-top: 2px solid var(--accent); }
     border-radius: var(--radius-xs) !important;
   }
 
+  /* Masquer la cellule conteneur aussi (en plus de la checkbox elle-même) */
+  body:not(.compact-mode) td.td-compact-check { display: none !important; }
+
   #main-table th               {
     font-size: .65rem !important;
     padding: 10px 4px !important;
@@ -456,8 +453,6 @@ tr.drag-over td { border-top: 2px solid var(--accent); }
     padding: 6px 4px;
     border-bottom: 1.5px solid var(--border) !important;
   }
-  /* Checkbox compact masquée en mobile normal (sans .compact-mode) */
-  #main-table td.td-compact-check { display: none !important; }
   #main-tbody tr               {
     border-bottom: 1.5px solid var(--border) !important;
   }
