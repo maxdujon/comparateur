@@ -391,78 +391,111 @@ tr.drag-over td { border-top: 2px solid var(--accent); }
   }
   .drag-handle                 { display: none !important; }
 
-  /* ── Colonnes prix : 72 px fixes ──────────────────────────────── */
-  #main-table col.col-price    { width: 72px !important; }
+  /* ── Colonnes prix : 76 px fixes ──────────────────────────────── */
+  #main-table col.col-price    { width: 76px !important; }
   td[data-cell="auchan"],
   td[data-cell="superu"]       {
-    width: 72px !important;
-    min-width: 72px !important;
-    max-width: 72px !important;
+    width: 76px !important;
+    min-width: 76px !important;
+    max-width: 76px !important;
     text-align: center !important;
     white-space: nowrap;
-    padding: 4px 2px !important;
+    padding: 6px 3px !important;
     overflow: hidden;
   }
   td[data-cell="auchan"] input[type="number"],
   td[data-cell="superu"] input[type="number"] {
     width: 100% !important;
-    font-size: .78rem !important;
-    padding: 6px 1px !important;
+    font-size: .85rem !important;
+    padding: 10px 2px !important;
     text-align: center !important;
-    min-height: 36px;
+    min-height: 44px;
+    border-radius: var(--radius-xs);
   }
 
-  /* ── Colonne ✕ : 38 px fixes ──────────────────────────────────── */
-  #main-table col.col-del      { width: 38px !important; }
+  /* ── Colonne ✕ : 40 px fixes ──────────────────────────────────── */
+  #main-table col.col-del      { width: 40px !important; }
   td.td-del                    {
-    width: 38px !important;
-    min-width: 38px !important;
-    max-width: 38px !important;
-    padding: 4px 2px !important;
+    width: 40px !important;
+    min-width: 40px !important;
+    max-width: 40px !important;
+    padding: 6px 3px !important;
     text-align: center;
     overflow: hidden;
   }
   td.td-del .btn-sm            {
     width: 100% !important;
     min-width: 0 !important;
-    padding: 4px 0 !important;
-    font-size: .74rem !important;
-    min-height: 32px !important;
+    padding: 6px 0 !important;
+    font-size: .80rem !important;
+    min-height: 38px !important;
+    border-radius: var(--radius-xs) !important;
   }
 
   /* ── Colonne PRODUIT : tout l'espace restant ───────────────────── */
   /* col-product n'a PAS de width déclarée → reçoit automatiquement  */
-  /* 100% − 0 − 72 − 72 − 38 avec table-layout:fixed.               */
+  /* 100% − 0 − 76 − 76 − 40 avec table-layout:fixed.               */
   /* On s'assure que le texte revient à la ligne et n'est PAS caché. */
   td.td-product                {
     white-space: normal !important;
     word-break: break-word !important;
     overflow-wrap: anywhere !important;
-    overflow: visible !important;    /* ne jamais masquer le produit */
-    padding: 4px 6px 4px 4px !important;
+    overflow: visible !important;
+    padding: 6px 8px 6px 6px !important;
   }
   td.td-product input[type="text"] {
     width: 100% !important;
-    font-size: .85rem !important;
-    padding: 7px 4px !important;
+    font-size: .92rem !important;
+    padding: 10px 6px !important;
     white-space: normal !important;
     overflow-wrap: anywhere !important;
-    min-height: 38px;
+    min-height: 44px;
+    border-radius: var(--radius-xs);
   }
 
   /* ── En-têtes ──────────────────────────────────────────────────── */
   #main-table th               {
-    font-size: .60rem !important;
-    padding: 8px 3px !important;
+    font-size: .65rem !important;
+    padding: 10px 4px !important;
     white-space: normal !important;
     overflow: hidden;
+    line-height: 1.3;
   }
   /* "PRODUIT" à gauche */
   #main-table th:not(.th-handle):first-of-type,
   #main-table th:nth-child(2)  { text-align: left !important; }
 
-  /* ── Cellules générales ────────────────────────────────────────── */
-  #main-table td               { padding: 4px 3px; }
+  /* ── Cellules générales : meilleure hauteur de ligne ──────────── */
+  #main-table td               {
+    padding: 6px 4px;
+    /* Séparation visuelle légèrement plus marquée entre les lignes */
+    border-bottom: 1.5px solid var(--border) !important;
+  }
+  /* Alternance subtile de fond pour améliorer la lisibilité */
+  #main-tbody tr:nth-child(even) td {
+    background-color: var(--surface2);
+  }
+  /* Conserver le hover par-dessus l'alternance */
+  #main-tbody tr:hover td {
+    background: var(--bg2) !important;
+  }
+
+  /* ── Toolbar : boutons plus grands et plus espacés ────────────── */
+  .toolbar                     {
+    gap: 10px !important;
+    flex-wrap: wrap !important;
+  }
+  .toolbar .btn                {
+    font-size: .88rem !important;
+    padding: 12px 18px !important;
+    min-height: 48px !important;
+    border-radius: var(--radius-sm) !important;
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  /* ── Card padding réduit sur mobile pour gagner de l'espace ───── */
+  .card                        { padding: 16px 10px; }
 }
 
 /* ============================================================
