@@ -341,6 +341,19 @@ tr.drag-over td { border-top: 2px solid var(--accent); }
 .cell-cheap input { font-weight: 700; color: var(--green-text); }
 
 /* ============================================================
+   CHECKED-ROW — état "dans le caddie"
+   Applicable en mode normal ET en mode compact.
+   Aucune rature, uniquement opacité réduite.
+============================================================ */
+tr.checked-row {
+  opacity: 0.4;
+}
+/* Empêcher le hover de "réveiller" une ligne cochée */
+tr.checked-row:hover td {
+  background: inherit !important;
+}
+
+/* ============================================================
    CHECKBOX MODE COMPACT — MASQUAGE
    Sur PC : cellule masquée via media query min-width.
    Sur mobile normal (sans .compact-mode) : masquée aussi.
@@ -571,8 +584,9 @@ tr.drag-over td { border-top: 2px solid var(--accent); }
 .shop-list ul li:last-child { border-bottom: none; }
 .item-name  { flex: 1; min-width: 0; word-break: break-word; }
 .item-price { font-weight: 700; font-family: var(--mono); white-space: nowrap; }
-.shop-list ul li.checked .item-name  { text-decoration: line-through; color: var(--text-faint); }
-.shop-list ul li.checked .item-price { color: var(--text-faint); }
+/* Suppression de la rature — style atténué uniquement */
+.shop-list ul li.checked .item-name  { color: var(--text-faint); opacity: .6; }
+.shop-list ul li.checked .item-price { color: var(--text-faint); opacity: .6; }
 .item-check {
   width: 20px; height: 20px;
   min-width: 20px;
@@ -755,11 +769,12 @@ tr.drag-over td { border-top: 2px solid var(--accent); }
     transition: none !important;
   }
 
-  /* ── Ligne cochée : barré + opacité, SANS changer le fond ──── */
+  /* ── Ligne cochée en mode compact : atténuation sans rature ── */
   body.compact-mode #main-tbody tr.compact-done td.td-product input {
-    text-decoration: line-through !important;
     color: var(--text-faint) !important;
     opacity: .55;
+    /* Pas de text-decoration, pas de transition */
+    text-decoration: none !important;
   }
   /* On n'applique PAS de background sur tr.compact-done
      pour éviter tout flash visuel */
@@ -1167,6 +1182,66 @@ window.toggleCompact = function() {
 };
 
 /* ============================================================
+   LOGIQUE CASES À COCHER — "DANS LE CADDIE"
+   ─ Deux états : non coché = À acheter, coché = Pris
+   ─ Coché  → ajoute .checked-row sur le <tr> + déplace en bas
+   ─ Décoché → retire .checked-row + remonte en haut des non-cochés
+   ─ Fonctionne en mode normal ET en mode compact
+   ─ Ne touche pas à Firebase (compactChecked reste local)
+============================================================ */
+
+/**
+ * Retourne le premier index (dans le tbody) dont la ligne
+ * n'est PAS encore cochée (compact-done / checked-row).
+ * Utilisé pour insérer une ligne déchochée au bon endroit.
+ */
+function firstUncheckedIndex() {
+  const rows_el = document.querySelectorAll('#main-tbody tr');
+  for (let i = 0; i < rows_el.length; i++) {
+    if (!rows_el[i].classList.contains('checked-row')) return i;
+  }
+  return 0;
+}
+
+/**
+ * Applique l'état visuel et repositionne la ligne dans le tbody.
+ * @param {HTMLElement} tr   — la ligne du tableau
+ * @param {boolean}     isChecked
+ */
+function applyRowCheckedState(tr, isChecked) {
+  const tbody = document.getElementById('main-tbody');
+
+  if (isChecked) {
+    // 1. Marquer la ligne
+    tr.classList.add('checked-row', 'compact-done');
+    // 2. Déplacer en bas du tbody
+    tbody.appendChild(tr);
+  } else {
+    // 1. Démarquer la ligne
+    tr.classList.remove('checked-row', 'compact-done');
+    // 2. Remonter juste avant la première ligne cochée
+    const allRows = Array.from(tbody.querySelectorAll('tr'));
+    const firstChecked = allRows.find(r => r.classList.contains('checked-row'));
+    if (firstChecked) {
+      tbody.insertBefore(tr, firstChecked);
+    } else {
+      tbody.appendChild(tr);
+    }
+  }
+
+  // Resynchroniser dataset.idx après déplacement
+  Array.from(tbody.querySelectorAll('tr')).forEach((r, i) => {
+    r.dataset.idx = i;
+    // Mettre à jour rows[] pour que drag&drop reste cohérent
+    const rowData = rows.find(d => d.id === r.dataset.id);
+    if (rowData) rows[i] = rowData;
+  });
+  // Reorder rows[] to match DOM order
+  const domOrder = Array.from(tbody.querySelectorAll('tr')).map(r => r.dataset.id);
+  rows.sort((a, b) => domOrder.indexOf(a.id) - domOrder.indexOf(b.id));
+}
+
+/* ============================================================
    GESTION DES LIGNES
 ============================================================ */
 function generateId() {
@@ -1217,6 +1292,33 @@ function rebuildMainTable() {
   tbody.innerHTML = '';
   rows.forEach((row, idx) => tbody.appendChild(buildRow(row, idx)));
   updateMainTableColors();
+
+  // Restaurer checked-row depuis compactChecked après rebuild
+  tbody.querySelectorAll('tr').forEach(tr => {
+    const key = 'compact_' + (tr.dataset.id || '');
+    if (compactChecked[key]) {
+      tr.classList.add('checked-row', 'compact-done');
+    }
+  });
+
+  // Réordonner : lignes non-cochées d'abord, cochées en bas
+  const unchecked = Array.from(tbody.querySelectorAll('tr:not(.checked-row)'));
+  const chk       = Array.from(tbody.querySelectorAll('tr.checked-row'));
+  [...unchecked, ...chk].forEach(tr => tbody.appendChild(tr));
+
+  // Resynchroniser idx
+  Array.from(tbody.querySelectorAll('tr')).forEach((r, i) => { r.dataset.idx = i; });
+
+  // En mode compact, synchroniser les checkboxes
+  if (compactMode) {
+    tbody.querySelectorAll('tr').forEach(tr => {
+      const cb = tr.querySelector('.compact-checkbox');
+      if (cb) {
+        const key = 'compact_' + (tr.dataset.id || '');
+        cb.checked = !!compactChecked[key];
+      }
+    });
+  }
 }
 
 function buildRow(row, idx) {
@@ -1270,9 +1372,7 @@ function buildRow(row, idx) {
   tr.appendChild(tdD);
 
   // ── Cellule checkbox mode compact ─────────────────────────────
-  // Cette cellule est TOUJOURS créée dans le DOM mais masquée en
-  // mode normal via CSS (td.td-compact-check { display:none }).
-  // Elle devient visible uniquement quand body.compact-mode est actif.
+  // Toujours présente dans le DOM, masquée en mode normal par CSS.
   const tdCC = document.createElement('td');
   tdCC.className = 'td-compact-check';
   const cc = document.createElement('input');
@@ -1282,12 +1382,14 @@ function buildRow(row, idx) {
   cc.checked   = !!compactChecked[ccKey];
 
   cc.addEventListener('change', () => {
-    // Mettre à jour l'état coché sans modifier le fond de la ligne
-    compactChecked[ccKey] = cc.checked;
-    tr.classList.toggle('compact-done', cc.checked);
+    const isChecked = cc.checked;
+
+    // Sauvegarder l'état localement
+    compactChecked[ccKey] = isChecked;
     saveCompactChecked();
-    // Empêcher la propagation pour ne pas déclencher d'autres handlers
-    return false;
+
+    // Appliquer style + réorganisation (mode compact ET normal)
+    applyRowCheckedState(tr, isChecked);
   });
 
   tdCC.appendChild(cc);
