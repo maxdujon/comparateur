@@ -685,6 +685,174 @@ tr.drag-over td { border-top: 2px solid var(--accent); }
 }
 [data-theme="dark"] .offline-banner { background: #451a03; border-color: #92400e; color: #fcd34d; }
 .offline-banner.visible { display: block; }
+
+/* ============================================================
+   BOUTON MODE COMPACT — visible uniquement en mobile
+============================================================ */
+.compact-btn {
+  display: none; /* masqué sur PC */
+}
+
+/* ============================================================
+   MODE COMPACT — uniquement en mobile (max-width: 600px)
+============================================================ */
+@media (max-width: 600px) {
+
+  /* Afficher le bouton compact */
+  .compact-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 99px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-muted);
+    font-size: .82rem;
+    font-weight: 600;
+    font-family: var(--font);
+    cursor: pointer;
+    transition: all .2s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .compact-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .compact-btn.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+
+  /* ──────────────────────────────────────────────────────────
+     MODE COMPACT ACTIVÉ (.compact-mode sur le body)
+  ────────────────────────────────────────────────────────── */
+
+  /* Masquer colonnes prix, bouton supprimer, toolbar */
+  body.compact-mode th.th-a,
+  body.compact-mode th.th-s,
+  body.compact-mode td[data-cell="auchan"],
+  body.compact-mode td[data-cell="superu"],
+  body.compact-mode td.td-del,
+  body.compact-mode th.th-handle,
+  body.compact-mode td.td-handle       { display: none !important; }
+
+  /* Masquer sections inutiles en mode courses */
+  body.compact-mode #card-totaux,
+  body.compact-mode #card-reco,
+  body.compact-mode .toolbar           { display: none !important; }
+
+  /* Chaque ligne devient un flex-container */
+  body.compact-mode #main-table thead tr,
+  body.compact-mode #main-tbody tr     {
+    display: flex !important;
+    align-items: center !important;
+    min-height: 60px;
+    padding: 4px 0;
+    border-bottom: 1.5px solid var(--border);
+    gap: 0;
+  }
+  body.compact-mode #main-tbody tr:last-child { border-bottom: none; }
+
+  /* Colonne produit en flex:1 */
+  body.compact-mode td.td-product,
+  body.compact-mode th.th-product      {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    overflow: visible !important;
+    padding: 10px 12px !important;
+  }
+
+  /* Input produit : grosse typo, lecture seule en mode courses */
+  body.compact-mode td.td-product input[type="text"] {
+    font-size: 1.05rem !important;
+    font-weight: 600 !important;
+    min-height: 52px !important;
+    padding: 12px 8px !important;
+    border-color: transparent !important;
+    background: transparent !important;
+    pointer-events: none;
+    cursor: default;
+  }
+
+  /* Retour tactile sur tap */
+  body.compact-mode #main-tbody tr {
+    cursor: pointer;
+    transition: background .12s;
+  }
+  body.compact-mode #main-tbody tr:active { background: var(--bg2) !important; }
+
+  /* Ligne cochée */
+  body.compact-mode #main-tbody tr.compact-done td.td-product input {
+    text-decoration: line-through !important;
+    color: var(--text-faint) !important;
+    opacity: .55;
+  }
+  body.compact-mode #main-tbody tr.compact-done {
+    background: var(--surface2) !important;
+    opacity: .75;
+  }
+
+  /* Cellule checkbox — colonne à droite, taille tactile */
+  body.compact-mode .compact-check-cell {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    flex: none !important;
+    width: 56px !important;
+    min-width: 56px !important;
+    padding: 0 10px !important;
+    border: none !important;
+  }
+  body.compact-mode .compact-check {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    border-radius: 8px !important;
+    border: 2.5px solid var(--border) !important;
+    cursor: pointer !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    background: var(--surface) !important;
+    transition: all .15s !important;
+    position: relative !important;
+    flex-shrink: 0 !important;
+  }
+  body.compact-mode .compact-check:checked {
+    background: var(--accent) !important;
+    border-color: var(--accent) !important;
+  }
+  body.compact-mode .compact-check:checked::after {
+    content: '';
+    position: absolute;
+    left: 7px; top: 3px;
+    width: 10px; height: 14px;
+    border-right: 2.5px solid #fff;
+    border-bottom: 2.5px solid #fff;
+    transform: rotate(45deg);
+  }
+
+  /* En-tête compact */
+  body.compact-mode #main-table thead tr {
+    min-height: 40px;
+    border-bottom: 2px solid var(--border);
+  }
+  body.compact-mode th.th-product {
+    font-size: .75rem !important;
+    padding: 10px 12px !important;
+  }
+
+  /* Badge "Mode courses" dans le titre de la card */
+  body.compact-mode #card-tableau .card-title::after {
+    content: '🛒 Mode courses';
+    font-size: .7rem;
+    font-weight: 600;
+    background: var(--accent);
+    color: #fff;
+    padding: 2px 9px;
+    border-radius: 99px;
+    margin-left: 4px;
+  }
+}
 </style>
 </head>
 <body>
@@ -694,6 +862,7 @@ tr.drag-over td { border-top: 2px solid var(--accent); }
   <div class="header-top">
     <h1>🛒 <span class="a">Auchan</span> vs <span class="s">Super U</span></h1>
     <button class="theme-btn" id="theme-btn" onclick="toggleTheme()">🌙 Sombre</button>
+    <button class="compact-btn" id="compact-btn" onclick="toggleCompact()">📋 Compact</button>
   </div>
   <div class="header-sub">
     <span class="sync-dot" id="sync-dot"></span>
@@ -707,7 +876,7 @@ tr.drag-over td { border-top: 2px solid var(--accent); }
 </div>
 
 <!-- TABLEAU PRINCIPAL -->
-<div class="card">
+<div class="card" id="card-tableau">
   <div class="card-title">
     📋 Tableau des prix
     <span class="badge" id="row-count">0 produit</span>
@@ -755,7 +924,7 @@ tr.drag-over td { border-top: 2px solid var(--accent); }
 </div>
 
 <!-- TOTAUX -->
-<div class="card">
+<div class="card" id="card-totaux">
   <div class="card-title">💰 Totaux du panier</div>
   <div class="totals-grid">
     <div class="total-box auchan">
@@ -774,7 +943,7 @@ tr.drag-over td { border-top: 2px solid var(--accent); }
 </div>
 
 <!-- RECOMMANDATIONS -->
-<div class="card">
+<div class="card" id="card-reco">
   <div class="card-title">⭐ Magasin recommandé par produit</div>
   <div class="table-wrap">
     <table id="reco-table">
@@ -973,6 +1142,46 @@ function setTheme(isDark, persist = true) {
 window.toggleTheme = function() { setTheme(!dark); };
 
 /* ============================================================
+   MODE COMPACT COURSES
+============================================================ */
+let compactMode = false;
+
+window.toggleCompact = function() {
+  compactMode = !compactMode;
+  document.body.classList.toggle('compact-mode', compactMode);
+  const btn = document.getElementById('compact-btn');
+  if (btn) {
+    btn.classList.toggle('active', compactMode);
+    btn.textContent = compactMode ? '✕ Quitter' : '📋 Compact';
+  }
+  // Restaurer l'état des checkboxes compactes depuis compactChecked
+  if (compactMode) {
+    document.querySelectorAll('#main-tbody tr').forEach(tr => {
+      const cb = tr.querySelector('.compact-check');
+      if (cb) {
+        const key = 'compact_' + (tr.dataset.id || '');
+        cb.checked = !!compactChecked[key];
+        tr.classList.toggle('compact-done', cb.checked);
+      }
+    });
+  }
+  try { localStorage.setItem('comparateur_compact', JSON.stringify(compactMode)); } catch(_) {}
+};
+
+// Stockage local des cases cochées en mode compact (indépendant de Firebase)
+let compactChecked = {};
+try {
+  const cc = localStorage.getItem('comparateur_compact_checked');
+  if (cc) compactChecked = JSON.parse(cc);
+} catch(_) {}
+
+function saveCompactChecked() {
+  try { localStorage.setItem('comparateur_compact_checked', JSON.stringify(compactChecked)); } catch(_) {}
+}
+
+
+
+/* ============================================================
    GESTION DES LIGNES
 ============================================================ */
 function generateId() {
@@ -1074,6 +1283,22 @@ function buildRow(row, idx) {
   btn.addEventListener('click', () => window.deleteRow(row.id));
   tdD.appendChild(btn);
   tr.appendChild(tdD);
+
+  // Cellule checkbox mode compact
+  const tdCC = document.createElement('td');
+  tdCC.className = 'compact-check-cell';
+  const cc = document.createElement('input');
+  cc.type = 'checkbox';
+  cc.className = 'compact-check';
+  const ccKey = 'compact_' + row.id;
+  cc.checked = !!compactChecked[ccKey];
+  cc.addEventListener('change', () => {
+    compactChecked[ccKey] = cc.checked;
+    tr.classList.toggle('compact-done', cc.checked);
+    saveCompactChecked();
+  });
+  tdCC.appendChild(cc);
+  tr.appendChild(tdCC);
 
   tr.addEventListener('dragstart', onDragStart);
   tr.addEventListener('dragover',  onDragOver);
@@ -1343,6 +1568,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Thème avant Firestore pour éviter le flash
   const d = localStorage.getItem('comparateur_dark');
   if (d) setTheme(JSON.parse(d), false);
+
+  // Restaurer le mode compact
+  try {
+    const cm = localStorage.getItem('comparateur_compact');
+    if (cm && JSON.parse(cm)) window.toggleCompact();
+  } catch(_) {}
 
   await initFirestore();
 
