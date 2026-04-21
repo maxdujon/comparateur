@@ -359,94 +359,110 @@ tr.drag-over td { border-top: 2px solid var(--accent); }
 .cell-cheap { background: var(--green-bg) !important; }
 .cell-cheap input { font-weight: 700; color: var(--green-text); }
 
-/* ── Mobile ≤ 480 px ── */
-@media (max-width: 480px) {
-  /* Masquer le handle drag (inutilisable au doigt) */
-  .drag-handle  { display: none; }
-  th.th-handle  { display: none; }
-  td.td-handle  { display: none; }
-  /* Colonnes prix légèrement plus étroites pour donner plus de place au produit */
-  #main-table col.col-price { width: 72px; }
-  #main-table col.col-del   { width: 30px; }
-  th            { font-size: .62rem; padding: 8px 3px; }
-  td            { padding: 4px 3px; }
-  td input[type="text"]   { font-size: .84rem; padding: 7px 4px; }
-  td input[type="number"] { font-size: .74rem; padding: 7px 1px; }
-  .btn-sm       { padding: 5px 7px; font-size: .74rem; }
-}
+/* ══════════════════════════════════════════════════════════════
+   MOBILE — tableau  (portrait + paysage, ≤ 600 px)
 
-/* ── Correctifs mise en page tableau — Mobile ≤ 600 px ── */
+   Stratégie avec table-layout:fixed :
+   • col 1 (handle)  → réduite à 0, th/td vidés via nth-child
+   • col 3+4 (prix)  → 70 px fixes chacune
+   • col 5 (✕)       → 38 px fixes
+   • col 2 (produit) → aucune width déclarée = absorbe tout le
+     reste : 100% − 0 − 70 − 70 − 38
+
+   IMPORTANT : on cible les cellules via nth-child ET via les
+   classes/attributs data pour être robuste aux deux mécanismes.
+   Aucune fonctionnalité touchée.
+══════════════════════════════════════════════════════════════ */
 @media (max-width: 600px) {
 
-  /* ── 1. Supprimer PHYSIQUEMENT la colonne handle ──────────────
-     display:none sur th/td ne suffit pas avec table-layout:fixed :
-     la <col> garde sa width réservée. On annule width ET padding
-     sur les cellules, et on masque le contenu.                   */
-  #main-table col.col-handle     { width: 0 !important; }
-  #main-table thead tr th:nth-child(1),
-  #main-table tbody tr td:nth-child(1) {
+  /* ── 1. Colonne handle : neutralisation totale ─────────────────
+     display:none seul ne suffit pas — la <col> réserve quand
+     même sa largeur avec table-layout:fixed. On force tout à 0.  */
+  #main-table col.col-handle         { width: 0 !important; }
+  #main-table th:nth-child(1),
+  #main-table td:nth-child(1)        {
     width: 0 !important;
+    min-width: 0 !important;
     max-width: 0 !important;
     padding: 0 !important;
-    overflow: hidden !important;
     border: none !important;
+    overflow: hidden !important;
   }
-  .drag-handle { display: none; }
+  .drag-handle                       { display: none !important; }
 
-  /* ── 2. Largeurs fixes des colonnes prix (2×75 px) ────────────
-     On cible nth-child(3) et (4) car la col handle est réduite
-     à 0 mais les cellules restent dans le DOM.                   */
-  #main-table col.col-price      { width: 75px !important; }
+  /* ── 2. Colonnes prix : 70 px fixes ────────────────────────────
+     Ciblage double : via <col> class ET via nth-child sur les
+     cellules, pour être sûr même si le colgroup est ignoré.       */
+  #main-table col.col-price          { width: 70px !important; }
+  #main-table th:nth-child(3),
+  #main-table th:nth-child(4),
+  #main-table td:nth-child(3),
+  #main-table td:nth-child(4)        {
+    width: 70px !important;
+    min-width: 70px !important;
+    max-width: 70px !important;
+    text-align: center !important;
+    white-space: nowrap;
+    overflow: hidden;
+    padding: 4px 2px !important;
+  }
 
-  /* ── 3. Largeur fixe du bouton suppression (40 px) ───────────  */
-  #main-table col.col-del        { width: 40px !important; }
+  /* ── 3. Colonne ✕ : 38 px fixes ────────────────────────────── */
+  #main-table col.col-del            { width: 38px !important; }
+  #main-table th:nth-child(5),
+  #main-table td:nth-child(5)        {
+    width: 38px !important;
+    min-width: 38px !important;
+    max-width: 38px !important;
+    padding: 4px 2px !important;
+    text-align: center;
+    overflow: hidden;
+  }
 
-  /* ── 4. Colonne Produit = tout l'espace restant ───────────────
-     Avec table-layout:fixed, col-product (sans width déclarée)
-     absorbe : 100% − 0 − 75 − 75 − 40 = reste disponible.
-     On s'assure que le texte revient à la ligne.                 */
-  td.td-product {
+  /* ── 4. Colonne Produit : tout l'espace restant ─────────────────
+     100% − 0 − 70 − 70 − 38 = max disponible
+     Le texte revient à la ligne librement.                        */
+  #main-table td:nth-child(2)        {
     white-space: normal !important;
     word-break: break-word !important;
     overflow-wrap: anywhere !important;
     overflow: visible !important;
+    padding: 4px 6px 4px 4px !important;
   }
-  td.td-product input[type="text"] {
+  #main-table td:nth-child(2) input[type="text"] {
+    width: 100% !important;
+    font-size: .85rem !important;
+    padding: 7px 4px !important;
     white-space: normal !important;
     overflow-wrap: anywhere !important;
+    min-height: 38px;
+  }
+
+  /* ── 5. En-têtes ────────────────────────────────────────────── */
+  #main-table th                     {
+    font-size: .60rem !important;
+    padding: 8px 3px !important;
+    white-space: normal !important;
+  }
+  #main-table th:nth-child(2)        { text-align: left !important; }
+
+  /* ── 6. Inputs prix ─────────────────────────────────────────── */
+  #main-table td:nth-child(3) input[type="number"],
+  #main-table td:nth-child(4) input[type="number"] {
     width: 100% !important;
-    font-size: .84rem;
-    padding: 7px 4px;
-  }
-
-  /* ── 5. En-têtes ─────────────────────────────────────────────  */
-  #main-table th {
-    font-size: .60rem;
-    padding: 8px 3px;
-    white-space: normal;
-    overflow: hidden;
-  }
-  /* "PRODUIT" aligné à gauche */
-  #main-table thead tr th:nth-child(2) { text-align: left; }
-
-  /* ── 6. Cellules générales ────────────────────────────────────  */
-  #main-table td { padding: 4px 3px; }
-
-  /* ── 7. Inputs prix ───────────────────────────────────────────  */
-  td[data-cell="auchan"] input,
-  td[data-cell="superu"] input {
-    font-size: .76rem !important;
+    font-size: .78rem !important;
     padding: 6px 1px !important;
-    width: 100% !important;
+    text-align: center !important;
+    min-height: 38px;
   }
 
-  /* ── 8. Bouton suppression ────────────────────────────────────  */
-  #main-table .btn-sm {
-    padding: 4px 0;
-    font-size: .74rem;
-    min-width: 0;
-    width: 100%;
-    min-height: 34px;
+  /* ── 7. Bouton suppression ──────────────────────────────────── */
+  #main-table td:nth-child(5) .btn-sm {
+    width: 100% !important;
+    min-width: 0 !important;
+    padding: 4px 2px !important;
+    font-size: .74rem !important;
+    min-height: 34px !important;
   }
 }
 
