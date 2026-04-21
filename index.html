@@ -375,6 +375,71 @@ tr.drag-over td { border-top: 2px solid var(--accent); }
   .btn-sm       { padding: 5px 7px; font-size: .74rem; }
 }
 
+/* ── Correctifs mise en page tableau — Mobile ≤ 600 px ── */
+@media (max-width: 600px) {
+  /* Masquer le handle drag et sa colonne */
+  .drag-handle  { display: none; }
+  th.th-handle  { display: none; }
+  td.td-handle  { display: none; }
+  /* Supprime le colgroup de la colonne handle pour ne pas gâcher de place */
+  #main-table col.col-handle { width: 0; }
+
+  /* Colonnes prix : largeur fixe suffisante pour le label + montant */
+  #main-table col.col-price { width: 75px; }
+
+  /* Bouton suppression : juste ce qu'il faut */
+  #main-table col.col-del   { width: 40px; }
+
+  /* La colonne produit récupère TOUT l'espace restant grâce à table-layout:fixed
+     (pas de width déclarée sur col-product → width automatique = 100% − les cols fixées).
+     On s'assure qu'elle ne se comprime jamais et que le texte revient à la ligne. */
+  td.td-product {
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    min-width: 0;         /* autorise le retour à la ligne dans un flex/table cell */
+  }
+
+  /* En-têtes : police réduite, pas de troncature */
+  th {
+    font-size: .60rem;
+    padding: 8px 3px;
+    white-space: normal;
+    text-align: center;
+  }
+  /* En-tête Produit aligné à gauche */
+  th:nth-child(2) { text-align: left; }
+
+  /* Cellules générales */
+  td { padding: 4px 3px; }
+
+  /* Input produit : occupe tout, texte lisible, retour à la ligne */
+  td input[type="text"] {
+    font-size: .84rem;
+    padding: 7px 4px;
+    width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  /* Input prix : largeur max calée sur la colonne, centré, mono */
+  td input[type="number"] {
+    font-size: .76rem;
+    padding: 6px 2px;
+    width: 100%;
+    text-align: center;
+  }
+
+  /* Bouton suppression : carré, centré dans sa cellule */
+  .btn-sm {
+    padding: 5px 6px;
+    font-size: .74rem;
+    min-width: 32px;
+    min-height: 34px;
+    width: 100%;
+  }
+}
+
 /* ============================================================
    TOTALS
 ============================================================ */
