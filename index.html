@@ -375,73 +375,51 @@ tr.drag-over td { border-top: 2px solid var(--accent); }
 ══════════════════════════════════════════════════════════════ */
 @media (max-width: 600px) {
 
-  /* ── Handle drag : masquage visuel + annulation de la largeur ── */
-  /* display:none cache th/td mais la <col> garde sa largeur avec   */
-  /* table-layout:fixed. On force width:0 sur la <col> ET on vide   */
-  /* le padding des cellules pour qu'elles ne consomment rien.       */
-  #main-table col.col-handle   { width: 0 !important; }
-  th.th-handle                 { display: none !important; padding: 0 !important; }
+  /* ══════════════════════════════════════════════════════════════
+     LAYOUT FLEX SUR LES LIGNES
+     ──────────────────────────────────────────────────────────────
+     On abandonne table-layout:fixed au profit d'un display:flex
+     sur chaque tr / thead tr.
+     Avantage : flex:1 sur .td-product garantit qu'elle prend tout
+     l'espace restant, sans calcul de largeur résiduelle fragile.
+     Les colonnes à largeur fixe (prix, del) sont déclarées avec
+     width + flex-shrink:0 pour ne jamais rétrécir.
+     On cible UNIQUEMENT par classes CSS — jamais nth-child —
+     pour rester insensible à l'ordre réel des cellules.
+  ══════════════════════════════════════════════════════════════ */
+
+  /* ── Neutraliser table-layout:fixed en mobile ─────────────── */
+  #main-table                  { table-layout: auto !important; width: 100% !important; }
+
+  /* ── Transformer chaque ligne en conteneur flex ────────────── */
+  #main-table thead tr,
+  #main-tbody tr               {
+    display: flex !important;
+    align-items: center !important;
+    width: 100% !important;
+  }
+
+  /* ── Handle drag : masqué, largeur nulle ───────────────────── */
+  th.th-handle,
   td.td-handle                 {
     display: none !important;
     width: 0 !important;
-    min-width: 0 !important;
-    max-width: 0 !important;
     padding: 0 !important;
     border: none !important;
+    flex: none !important;
   }
   .drag-handle                 { display: none !important; }
 
-  /* ── Colonnes prix : 76 px fixes ──────────────────────────────── */
-  #main-table col.col-price    { width: 76px !important; }
-  td[data-cell="auchan"],
-  td[data-cell="superu"]       {
-    width: 76px !important;
-    min-width: 76px !important;
-    max-width: 76px !important;
-    text-align: center !important;
-    white-space: nowrap;
-    padding: 6px 3px !important;
-    overflow: hidden;
-  }
-  td[data-cell="auchan"] input[type="number"],
-  td[data-cell="superu"] input[type="number"] {
-    width: 100% !important;
-    font-size: .85rem !important;
-    padding: 10px 2px !important;
-    text-align: center !important;
-    min-height: 44px;
-    border-radius: var(--radius-xs);
-  }
-
-  /* ── Colonne ✕ : 40 px fixes ──────────────────────────────────── */
-  #main-table col.col-del      { width: 40px !important; }
-  td.td-del                    {
-    width: 40px !important;
-    min-width: 40px !important;
-    max-width: 40px !important;
-    padding: 6px 3px !important;
-    text-align: center;
-    overflow: hidden;
-  }
-  td.td-del .btn-sm            {
-    width: 100% !important;
-    min-width: 0 !important;
-    padding: 6px 0 !important;
-    font-size: .80rem !important;
-    min-height: 38px !important;
-    border-radius: var(--radius-xs) !important;
-  }
-
-  /* ── Colonne PRODUIT : tout l'espace restant ───────────────────── */
-  /* col-product n'a PAS de width déclarée → reçoit automatiquement  */
-  /* 100% − 0 − 76 − 76 − 40 avec table-layout:fixed.               */
-  /* On s'assure que le texte revient à la ligne et n'est PAS caché. */
+  /* ── Colonne PRODUIT : flex:1 — prend tout l'espace restant ── */
+  th.th-product,
   td.td-product                {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;          /* indispensable pour flex:1 */
+    overflow: visible !important;
     white-space: normal !important;
     word-break: break-word !important;
     overflow-wrap: anywhere !important;
-    overflow: visible !important;
-    padding: 6px 8px 6px 6px !important;
+    padding: 6px 6px 6px 8px !important;
   }
   td.td-product input[type="text"] {
     width: 100% !important;
@@ -453,34 +431,76 @@ tr.drag-over td { border-top: 2px solid var(--accent); }
     border-radius: var(--radius-xs);
   }
 
-  /* ── En-têtes ──────────────────────────────────────────────────── */
+  /* ── Colonnes prix : largeur fixe 76 px, sans rétrécissement ── */
+  th.th-a,
+  th.th-s,
+  td[data-cell="auchan"],
+  td[data-cell="superu"]       {
+    flex: none !important;
+    width: 76px !important;
+    min-width: 76px !important;
+    max-width: 76px !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    padding: 6px 3px !important;
+  }
+  td[data-cell="auchan"] input[type="number"],
+  td[data-cell="superu"] input[type="number"] {
+    width: 100% !important;
+    font-size: .85rem !important;
+    padding: 10px 2px !important;
+    text-align: center !important;
+    min-height: 44px;
+    border-radius: var(--radius-xs);
+  }
+
+  /* ── Colonne ✕ : largeur fixe 40 px ───────────────────────── */
+  td.td-del                    {
+    flex: none !important;
+    width: 40px !important;
+    min-width: 40px !important;
+    max-width: 40px !important;
+    padding: 6px 3px !important;
+    text-align: center !important;
+    overflow: hidden !important;
+  }
+  td.td-del .btn-sm            {
+    width: 34px !important;
+    min-width: 0 !important;
+    padding: 6px 0 !important;
+    font-size: .80rem !important;
+    min-height: 38px !important;
+    border-radius: var(--radius-xs) !important;
+  }
+
+  /* ── En-têtes ──────────────────────────────────────────────── */
   #main-table th               {
     font-size: .65rem !important;
     padding: 10px 4px !important;
     white-space: normal !important;
-    overflow: hidden;
     line-height: 1.3;
   }
-  /* "PRODUIT" à gauche */
-  #main-table th:not(.th-handle):first-of-type,
-  #main-table th:nth-child(2)  { text-align: left !important; }
+  th.th-product                { text-align: left !important; }
 
-  /* ── Cellules générales : meilleure hauteur de ligne ──────────── */
+  /* ── Cellules générales ─────────────────────────────────────── */
   #main-table td               {
     padding: 6px 4px;
-    /* Séparation visuelle légèrement plus marquée entre les lignes */
+    border-bottom: 1.5px solid var(--border) !important;
+    /* overflow:hidden ne s'applique pas à td-product (déjà override) */
+  }
+  /* Séparateur de ligne sur le tr plutôt que td (plus fiable en flex) */
+  #main-tbody tr               {
     border-bottom: 1.5px solid var(--border) !important;
   }
-  /* Alternance subtile de fond pour améliorer la lisibilité */
-  #main-tbody tr:nth-child(even) td {
-    background-color: var(--surface2);
-  }
-  /* Conserver le hover par-dessus l'alternance */
-  #main-tbody tr:hover td {
-    background: var(--bg2) !important;
-  }
+  #main-tbody tr:last-child    { border-bottom: none !important; }
+  #main-tbody tr td            { border-bottom: none !important; }
 
-  /* ── Toolbar : boutons plus grands et plus espacés ────────────── */
+  /* Alternance subtile */
+  #main-tbody tr:nth-child(even) { background: var(--surface2); }
+  #main-tbody tr:hover           { background: var(--bg2) !important; }
+
+  /* ── Toolbar : boutons plus grands ─────────────────────────── */
   .toolbar                     {
     gap: 10px !important;
     flex-wrap: wrap !important;
@@ -494,7 +514,7 @@ tr.drag-over td { border-top: 2px solid var(--accent); }
     justify-content: center;
   }
 
-  /* ── Card padding réduit sur mobile pour gagner de l'espace ───── */
+  /* ── Card padding ───────────────────────────────────────────── */
   .card                        { padding: 16px 10px; }
 }
 
@@ -723,7 +743,7 @@ tr.drag-over td { border-top: 2px solid var(--accent); }
       <thead>
         <tr>
           <th class="th-handle"></th>
-          <th>Produit</th>
+          <th class="th-product">Produit</th>
           <th class="th-a">🔴 Auchan</th>
           <th class="th-s">🔵 Super U</th>
           <th></th>
