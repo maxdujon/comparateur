@@ -377,66 +377,76 @@ tr.drag-over td { border-top: 2px solid var(--accent); }
 
 /* ── Correctifs mise en page tableau — Mobile ≤ 600 px ── */
 @media (max-width: 600px) {
-  /* Masquer le handle drag et sa colonne */
-  .drag-handle  { display: none; }
-  th.th-handle  { display: none; }
-  td.td-handle  { display: none; }
-  /* Supprime le colgroup de la colonne handle pour ne pas gâcher de place */
-  #main-table col.col-handle { width: 0; }
 
-  /* Colonnes prix : largeur fixe suffisante pour le label + montant */
-  #main-table col.col-price { width: 75px; }
+  /* ── 1. Supprimer PHYSIQUEMENT la colonne handle ──────────────
+     display:none sur th/td ne suffit pas avec table-layout:fixed :
+     la <col> garde sa width réservée. On annule width ET padding
+     sur les cellules, et on masque le contenu.                   */
+  #main-table col.col-handle     { width: 0 !important; }
+  #main-table thead tr th:nth-child(1),
+  #main-table tbody tr td:nth-child(1) {
+    width: 0 !important;
+    max-width: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    border: none !important;
+  }
+  .drag-handle { display: none; }
 
-  /* Bouton suppression : juste ce qu'il faut */
-  #main-table col.col-del   { width: 40px; }
+  /* ── 2. Largeurs fixes des colonnes prix (2×75 px) ────────────
+     On cible nth-child(3) et (4) car la col handle est réduite
+     à 0 mais les cellules restent dans le DOM.                   */
+  #main-table col.col-price      { width: 75px !important; }
 
-  /* La colonne produit récupère TOUT l'espace restant grâce à table-layout:fixed
-     (pas de width déclarée sur col-product → width automatique = 100% − les cols fixées).
-     On s'assure qu'elle ne se comprime jamais et que le texte revient à la ligne. */
+  /* ── 3. Largeur fixe du bouton suppression (40 px) ───────────  */
+  #main-table col.col-del        { width: 40px !important; }
+
+  /* ── 4. Colonne Produit = tout l'espace restant ───────────────
+     Avec table-layout:fixed, col-product (sans width déclarée)
+     absorbe : 100% − 0 − 75 − 75 − 40 = reste disponible.
+     On s'assure que le texte revient à la ligne.                 */
   td.td-product {
-    white-space: normal;
-    word-break: break-word;
-    overflow-wrap: anywhere;
-    min-width: 0;         /* autorise le retour à la ligne dans un flex/table cell */
+    white-space: normal !important;
+    word-break: break-word !important;
+    overflow-wrap: anywhere !important;
+    overflow: visible !important;
+  }
+  td.td-product input[type="text"] {
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+    width: 100% !important;
+    font-size: .84rem;
+    padding: 7px 4px;
   }
 
-  /* En-têtes : police réduite, pas de troncature */
-  th {
+  /* ── 5. En-têtes ─────────────────────────────────────────────  */
+  #main-table th {
     font-size: .60rem;
     padding: 8px 3px;
     white-space: normal;
-    text-align: center;
+    overflow: hidden;
   }
-  /* En-tête Produit aligné à gauche */
-  th:nth-child(2) { text-align: left; }
+  /* "PRODUIT" aligné à gauche */
+  #main-table thead tr th:nth-child(2) { text-align: left; }
 
-  /* Cellules générales */
-  td { padding: 4px 3px; }
+  /* ── 6. Cellules générales ────────────────────────────────────  */
+  #main-table td { padding: 4px 3px; }
 
-  /* Input produit : occupe tout, texte lisible, retour à la ligne */
-  td input[type="text"] {
-    font-size: .84rem;
-    padding: 7px 4px;
-    width: 100%;
-    white-space: normal;
-    overflow-wrap: anywhere;
-  }
-
-  /* Input prix : largeur max calée sur la colonne, centré, mono */
-  td input[type="number"] {
-    font-size: .76rem;
-    padding: 6px 2px;
-    width: 100%;
-    text-align: center;
+  /* ── 7. Inputs prix ───────────────────────────────────────────  */
+  td[data-cell="auchan"] input,
+  td[data-cell="superu"] input {
+    font-size: .76rem !important;
+    padding: 6px 1px !important;
+    width: 100% !important;
   }
 
-  /* Bouton suppression : carré, centré dans sa cellule */
-  .btn-sm {
-    padding: 5px 6px;
+  /* ── 8. Bouton suppression ────────────────────────────────────  */
+  #main-table .btn-sm {
+    padding: 4px 0;
     font-size: .74rem;
-    min-width: 32px;
-    min-height: 34px;
+    min-width: 0;
     width: 100%;
+    min-height: 34px;
   }
 }
 
