@@ -358,7 +358,6 @@ tr.drag-over td { border-top: 2px solid var(--accent); }
   margin-top: 2px;
   appearance: none;
   -webkit-appearance: none;
-  /* flèche discrète custom */
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%239ca3af'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 4px center;
@@ -370,26 +369,40 @@ tr.drag-over td { border-top: 2px solid var(--accent); }
   outline: none;
   color: var(--accent);
 }
-/* En mode compact : masquer le select (on n'édite pas) */
+/* En mode compact : masquer le select */
 body.compact-mode .rubrique-select { display: none !important; }
 
-/* ── Séparateur de rubrique dans le tableau principal ──────── */
-tr.rubrique-sep td {
-  background: var(--bg) !important;
-  padding: 4px 6px !important;
-  border-bottom: 1px solid var(--border) !important;
-  border-top: 2px solid var(--border) !important;
+/* ============================================================
+   RUBRIQUE-HEADER — en-tête de groupe dans le tableau
+   Valide en table-layout normal (PC et mobile non-compact).
+   Jamais flex, jamais modifié par les règles compact.
+============================================================ */
+tr.rubrique-header {
+  /* display:table-row est la valeur native — on la force explicitement
+     pour qu'aucune règle flex ne puisse l'écraser sur ce sélecteur */
+  display: table-row !important;
 }
-tr.rubrique-sep .rubrique-sep-label {
+tr.rubrique-header td {
+  background: var(--bg2) !important;
+  padding: 5px 8px !important;
+  border-top: 2px solid var(--border) !important;
+  border-bottom: 1px solid var(--border) !important;
+  /* Pas de display:flex, pas de min-height forcée */
+}
+tr.rubrique-header:first-child td {
+  border-top: none !important;
+}
+.rubrique-header-label {
   font-size: .65rem;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: .6px;
+  letter-spacing: .7px;
   color: var(--text-muted);
 }
-tr.rubrique-sep:hover td { background: var(--bg) !important; }
-/* Masquer les séparateurs en mode compact */
-body.compact-mode tr.rubrique-sep { display: none !important; }
+tr.rubrique-header:hover td { background: var(--bg2) !important; }
+
+/* Masquer les en-têtes de rubrique en mode compact */
+body.compact-mode tr.rubrique-header { display: none !important; }
 
 /* ============================================================
    CHECKED-ROW — état "dans le caddie"
@@ -425,7 +438,7 @@ tr.checked-row:hover td {
   #main-table                  { table-layout: auto !important; width: 100% !important; }
 
   #main-table thead tr,
-  #main-tbody tr               {
+  #main-tbody tr:not(.rubrique-header) {
     display: flex !important;
     align-items: center !important;
     width: 100% !important;
@@ -522,14 +535,14 @@ tr.checked-row:hover td {
     padding: 6px 4px;
     border-bottom: 1.5px solid var(--border) !important;
   }
-  #main-tbody tr               {
+  #main-tbody tr:not(.rubrique-header)               {
     border-bottom: 1.5px solid var(--border) !important;
   }
   #main-tbody tr:last-child    { border-bottom: none !important; }
   #main-tbody tr td            { border-bottom: none !important; }
 
-  #main-tbody tr:nth-child(even) { background: var(--surface2); }
-  #main-tbody tr:hover           { background: var(--bg2) !important; }
+  #main-tbody tr:not(.rubrique-header):nth-child(even) { background: var(--surface2); }
+  #main-tbody tr:not(.rubrique-header):hover           { background: var(--bg2) !important; }
 
   .toolbar                     {
     gap: 10px !important;
@@ -763,7 +776,7 @@ tr.checked-row:hover td {
 
   /* ── Chaque ligne : flex stable, hauteur fixe ──────────────── */
   body.compact-mode #main-table thead tr,
-  body.compact-mode #main-tbody tr     {
+  body.compact-mode #main-tbody tr:not(.rubrique-header) {
     display: flex !important;
     align-items: center !important;
     min-height: 56px !important;
@@ -772,16 +785,16 @@ tr.checked-row:hover td {
     /* Fond fixe : jamais modifié lors du check */
     background: var(--surface) !important;
   }
-  body.compact-mode #main-tbody tr:nth-child(even) {
+  body.compact-mode #main-tbody tr:not(.rubrique-header):nth-child(even) {
     background: var(--surface2) !important;
   }
   /* Retour tactile : uniquement opacity, jamais background */
-  body.compact-mode #main-tbody tr:active {
+  body.compact-mode #main-tbody tr:not(.rubrique-header):active {
     opacity: .85 !important;
   }
 
   /* ── Toutes les td : fond hérité, pas de transition ────────── */
-  body.compact-mode #main-tbody tr td  {
+  body.compact-mode #main-tbody tr:not(.rubrique-header) td  {
     background: inherit !important;
     transition: none !important;
     padding: 0 !important;
@@ -831,7 +844,7 @@ tr.checked-row:hover td {
      pour éviter tout flash visuel */
 
   /* ── Séparateur de ligne ────────────────────────────────────── */
-  body.compact-mode #main-tbody tr     {
+  body.compact-mode #main-tbody tr:not(.rubrique-header)     {
     border-bottom: 1.5px solid var(--border) !important;
   }
   body.compact-mode #main-tbody tr:last-child { border-bottom: none !important; }
@@ -1354,11 +1367,11 @@ function rebuildMainTable() {
   const tbody = document.getElementById('main-tbody');
   tbody.innerHTML = '';
 
-  // ── 1. Marquer chaque row avec son état coché ────────────────
-  // (on lit compactChecked pour savoir si une ligne est cochée)
+  // ── 1. Fonction de détermination de l'état coché ─────────────
   const isRowChecked = (row) => !!compactChecked['compact_' + row.id];
 
   // ── 2. Trier : par rubrique (ordre fixe), puis non-cochés avant cochés
+  //    Les produits sans rubrique → placés en dernier sous "Sans rubrique"
   const sorted = [...rows].sort((a, b) => {
     const ra = rubriqueIndex(a.rubrique), rb = rubriqueIndex(b.rubrique);
     if (ra !== rb) return ra - rb;
@@ -1367,35 +1380,38 @@ function rebuildMainTable() {
     return ca - cb;
   });
 
-  // ── 3. Construire le DOM avec séparateurs de rubrique ────────
-  let lastRubrique = null;
-  let globalIdx = 0;
+  // ── 3. Construire le DOM avec en-têtes de rubrique ───────────
+  let lastRubrique = null;   // sentinel : commence à null
+  let globalIdx    = 0;
 
   sorted.forEach((row) => {
-    const rubrique = row.rubrique || '';
+    // La rubrique affichée : vide → "Sans rubrique"
+    const rubrique     = row.rubrique || '';
+    const rubriqueDisp = rubrique || 'Sans rubrique';
 
-    // Insérer un séparateur si la rubrique change (et est renseignée)
-    if (rubrique && rubrique !== lastRubrique) {
+    // Insérer un en-tête de rubrique chaque fois que le groupe change
+    if (rubriqueDisp !== lastRubrique) {
       const sepTr = document.createElement('tr');
-      sepTr.className = 'rubrique-sep';
-      // Le séparateur s'étend sur toutes les colonnes (handle + produit + auchan + superu + del + compact-check)
+      sepTr.className = 'rubrique-header';
+
       const sepTd = document.createElement('td');
-      sepTd.colSpan = 6;
+      // 5 colonnes visibles sur PC : handle + product + auchan + superu + del
+      // La td-compact-check (6e) est masquée sur PC via CSS
+      sepTd.colSpan = 5;
+
       const lbl = document.createElement('span');
-      lbl.className   = 'rubrique-sep-label';
-      lbl.textContent = rubrique;
+      lbl.className   = 'rubrique-header-label';
+      lbl.textContent = rubriqueDisp;
       sepTd.appendChild(lbl);
       sepTr.appendChild(sepTd);
       tbody.appendChild(sepTr);
-      lastRubrique = rubrique;
-    } else if (!rubrique) {
-      lastRubrique = null; // reset si pas de rubrique
+      lastRubrique = rubriqueDisp;
     }
 
     const tr = buildRow(row, globalIdx++);
     tbody.appendChild(tr);
 
-    // Appliquer l'état coché
+    // Appliquer l'état coché (A1.3)
     if (isRowChecked(row)) {
       tr.classList.add('checked-row', 'compact-done');
     }
@@ -1403,14 +1419,14 @@ function rebuildMainTable() {
 
   updateMainTableColors();
 
-  // ── 4. Resynchroniser idx
-  Array.from(tbody.querySelectorAll('tr:not(.rubrique-sep)')).forEach((r, i) => {
+  // ── 4. Resynchroniser dataset.idx (exclure les en-têtes de rubrique)
+  Array.from(tbody.querySelectorAll('tr:not(.rubrique-header)')).forEach((r, i) => {
     r.dataset.idx = i;
   });
 
   // ── 5. En mode compact, synchroniser les checkboxes
   if (compactMode) {
-    tbody.querySelectorAll('tr:not(.rubrique-sep)').forEach(tr => {
+    tbody.querySelectorAll('tr:not(.rubrique-header)').forEach(tr => {
       const cb = tr.querySelector('.compact-checkbox');
       if (cb) {
         const key = 'compact_' + (tr.dataset.id || '');
@@ -1544,7 +1560,7 @@ function makeNumberInput(row, field) {
 }
 
 function updateMainTableColors() {
-  document.querySelectorAll('#main-tbody tr:not(.rubrique-sep)').forEach(tr => {
+  document.querySelectorAll('#main-tbody tr:not(.rubrique-header)').forEach(tr => {
     const row = rows.find(r => r.id === tr.dataset.id);
     if (!row) return;
     const a = parseFloat(row.auchan), s = parseFloat(row.superu);
