@@ -341,6 +341,57 @@ tr.drag-over td { border-top: 2px solid var(--accent); }
 .cell-cheap input { font-weight: 700; color: var(--green-text); }
 
 /* ============================================================
+   RUBRIQUE — SELECT dans la cellule produit
+============================================================ */
+.rubrique-select {
+  display: block;
+  width: 100%;
+  border: none;
+  border-radius: var(--radius-xs);
+  padding: 2px 4px;
+  font-size: .70rem;
+  font-family: var(--font);
+  font-weight: 600;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  margin-top: 2px;
+  appearance: none;
+  -webkit-appearance: none;
+  /* flèche discrète custom */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%239ca3af'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 4px center;
+  background-size: 8px;
+  padding-right: 18px;
+  transition: color .15s;
+}
+.rubrique-select:hover, .rubrique-select:focus {
+  outline: none;
+  color: var(--accent);
+}
+/* En mode compact : masquer le select (on n'édite pas) */
+body.compact-mode .rubrique-select { display: none !important; }
+
+/* ── Séparateur de rubrique dans le tableau principal ──────── */
+tr.rubrique-sep td {
+  background: var(--bg) !important;
+  padding: 4px 6px !important;
+  border-bottom: 1px solid var(--border) !important;
+  border-top: 2px solid var(--border) !important;
+}
+tr.rubrique-sep .rubrique-sep-label {
+  font-size: .65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  color: var(--text-muted);
+}
+tr.rubrique-sep:hover td { background: var(--bg) !important; }
+/* Masquer les séparateurs en mode compact */
+body.compact-mode tr.rubrique-sep { display: none !important; }
+
+/* ============================================================
    CHECKED-ROW — état "dans le caddie"
    Applicable en mode normal ET en mode compact.
    Aucune rature, uniquement opacité réduite.
@@ -1204,41 +1255,53 @@ function firstUncheckedIndex() {
 }
 
 /**
- * Applique l'état visuel et repositionne la ligne dans le tbody.
+ * Applique l'état visuel et repositionne la ligne dans le tbody,
+ * en respectant l'ordre des rubriques et l'état coché.
  * @param {HTMLElement} tr   — la ligne du tableau
  * @param {boolean}     isChecked
  */
 function applyRowCheckedState(tr, isChecked) {
-  const tbody = document.getElementById('main-tbody');
-
   if (isChecked) {
-    // 1. Marquer la ligne
     tr.classList.add('checked-row', 'compact-done');
-    // 2. Déplacer en bas du tbody
-    tbody.appendChild(tr);
   } else {
-    // 1. Démarquer la ligne
     tr.classList.remove('checked-row', 'compact-done');
-    // 2. Remonter juste avant la première ligne cochée
-    const allRows = Array.from(tbody.querySelectorAll('tr'));
-    const firstChecked = allRows.find(r => r.classList.contains('checked-row'));
-    if (firstChecked) {
-      tbody.insertBefore(tr, firstChecked);
-    } else {
-      tbody.appendChild(tr);
-    }
   }
 
-  // Resynchroniser dataset.idx après déplacement
-  Array.from(tbody.querySelectorAll('tr')).forEach((r, i) => {
-    r.dataset.idx = i;
-    // Mettre à jour rows[] pour que drag&drop reste cohérent
-    const rowData = rows.find(d => d.id === r.dataset.id);
-    if (rowData) rows[i] = rowData;
-  });
-  // Reorder rows[] to match DOM order
-  const domOrder = Array.from(tbody.querySelectorAll('tr')).map(r => r.dataset.id);
-  rows.sort((a, b) => domOrder.indexOf(a.id) - domOrder.indexOf(b.id));
+  // Re-render complet pour maintenir le tri par rubrique + état
+  // On passe par renderAll qui reconstruit depuis rows[]
+  renderAll();
+}
+
+/* ============================================================
+   RUBRIQUES — liste ordonnée fixe
+============================================================ */
+const RUBRIQUES = [
+  'Fruits & Légumes',
+  'Viandes & Poissons',
+  'Frais & Crèmerie',
+  'Œufs & Produits laitiers',
+  'Boulangerie & Pâtisserie',
+  'Épicerie salée',
+  'Épicerie sucrée',
+  'Pâtes, Riz & Céréales',
+  'Condiments & Sauces',
+  'Boissons',
+  'Alcool & Cave',
+  'Surgelés',
+  'Hygiène & Beauté',
+  'Entretien & Ménage',
+  'Animaux',
+  'Bébé',
+  'Maison & Divers',
+  'Bricolage & Auto',
+  'Papeterie & Fournitures',
+  'Fêtes & Saisonnier',
+];
+
+/** Retourne l'index de la rubrique dans la liste, ou Infinity si absente */
+function rubriqueIndex(r) {
+  const idx = RUBRIQUES.indexOf(r || '');
+  return idx === -1 ? RUBRIQUES.length : idx;
 }
 
 /* ============================================================
@@ -1249,7 +1312,7 @@ function generateId() {
 }
 
 window.addRow = function(render = true) {
-  rows.push({ id: generateId(), product: '', auchan: '', superu: '' });
+  rows.push({ id: generateId(), product: '', auchan: '', superu: '', rubrique: '' });
   if (render) { renderAll(); save(); }
 };
 
@@ -1290,28 +1353,64 @@ function updateFromInput() {
 function rebuildMainTable() {
   const tbody = document.getElementById('main-tbody');
   tbody.innerHTML = '';
-  rows.forEach((row, idx) => tbody.appendChild(buildRow(row, idx)));
-  updateMainTableColors();
 
-  // Restaurer checked-row depuis compactChecked après rebuild
-  tbody.querySelectorAll('tr').forEach(tr => {
-    const key = 'compact_' + (tr.dataset.id || '');
-    if (compactChecked[key]) {
+  // ── 1. Marquer chaque row avec son état coché ────────────────
+  // (on lit compactChecked pour savoir si une ligne est cochée)
+  const isRowChecked = (row) => !!compactChecked['compact_' + row.id];
+
+  // ── 2. Trier : par rubrique (ordre fixe), puis non-cochés avant cochés
+  const sorted = [...rows].sort((a, b) => {
+    const ra = rubriqueIndex(a.rubrique), rb = rubriqueIndex(b.rubrique);
+    if (ra !== rb) return ra - rb;
+    // à même rubrique : non-cochés d'abord
+    const ca = isRowChecked(a) ? 1 : 0, cb = isRowChecked(b) ? 1 : 0;
+    return ca - cb;
+  });
+
+  // ── 3. Construire le DOM avec séparateurs de rubrique ────────
+  let lastRubrique = null;
+  let globalIdx = 0;
+
+  sorted.forEach((row) => {
+    const rubrique = row.rubrique || '';
+
+    // Insérer un séparateur si la rubrique change (et est renseignée)
+    if (rubrique && rubrique !== lastRubrique) {
+      const sepTr = document.createElement('tr');
+      sepTr.className = 'rubrique-sep';
+      // Le séparateur s'étend sur toutes les colonnes (handle + produit + auchan + superu + del + compact-check)
+      const sepTd = document.createElement('td');
+      sepTd.colSpan = 6;
+      const lbl = document.createElement('span');
+      lbl.className   = 'rubrique-sep-label';
+      lbl.textContent = rubrique;
+      sepTd.appendChild(lbl);
+      sepTr.appendChild(sepTd);
+      tbody.appendChild(sepTr);
+      lastRubrique = rubrique;
+    } else if (!rubrique) {
+      lastRubrique = null; // reset si pas de rubrique
+    }
+
+    const tr = buildRow(row, globalIdx++);
+    tbody.appendChild(tr);
+
+    // Appliquer l'état coché
+    if (isRowChecked(row)) {
       tr.classList.add('checked-row', 'compact-done');
     }
   });
 
-  // Réordonner : lignes non-cochées d'abord, cochées en bas
-  const unchecked = Array.from(tbody.querySelectorAll('tr:not(.checked-row)'));
-  const chk       = Array.from(tbody.querySelectorAll('tr.checked-row'));
-  [...unchecked, ...chk].forEach(tr => tbody.appendChild(tr));
+  updateMainTableColors();
 
-  // Resynchroniser idx
-  Array.from(tbody.querySelectorAll('tr')).forEach((r, i) => { r.dataset.idx = i; });
+  // ── 4. Resynchroniser idx
+  Array.from(tbody.querySelectorAll('tr:not(.rubrique-sep)')).forEach((r, i) => {
+    r.dataset.idx = i;
+  });
 
-  // En mode compact, synchroniser les checkboxes
+  // ── 5. En mode compact, synchroniser les checkboxes
   if (compactMode) {
-    tbody.querySelectorAll('tr').forEach(tr => {
+    tbody.querySelectorAll('tr:not(.rubrique-sep)').forEach(tr => {
       const cb = tr.querySelector('.compact-checkbox');
       if (cb) {
         const key = 'compact_' + (tr.dataset.id || '');
@@ -1346,6 +1445,31 @@ function buildRow(row, idx) {
     save();
   });
   tdP.appendChild(inP);
+
+  // ── Select rubrique (sous le nom du produit) ─────────────────
+  const sel = document.createElement('select');
+  sel.className = 'rubrique-select';
+  sel.title     = 'Rubrique';
+  // Option vide = non classé
+  const optVide = document.createElement('option');
+  optVide.value       = '';
+  optVide.textContent = '— Rubrique —';
+  sel.appendChild(optVide);
+  RUBRIQUES.forEach(rb => {
+    const opt = document.createElement('option');
+    opt.value       = rb;
+    opt.textContent = rb;
+    sel.appendChild(opt);
+  });
+  sel.value = row.rubrique || '';
+  sel.addEventListener('change', e => {
+    row.rubrique = e.target.value;
+    // Re-render complet pour ré-ordonner et mettre à jour les séparateurs
+    renderAll();
+    save();
+  });
+  tdP.appendChild(sel);
+
   tr.appendChild(tdP);
 
   // ── Prix Auchan ───────────────────────────────────────────────
@@ -1420,7 +1544,7 @@ function makeNumberInput(row, field) {
 }
 
 function updateMainTableColors() {
-  document.querySelectorAll('#main-tbody tr').forEach(tr => {
+  document.querySelectorAll('#main-tbody tr:not(.rubrique-sep)').forEach(tr => {
     const row = rows.find(r => r.id === tr.dataset.id);
     if (!row) return;
     const a = parseFloat(row.auchan), s = parseFloat(row.superu);
