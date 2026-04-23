@@ -405,6 +405,58 @@ tr.rubrique-header:hover td { background: var(--bg2) !important; }
 body.compact-mode tr.rubrique-header { display: none !important; }
 
 /* ============================================================
+   RUBRIQUE-TOTAL — ligne de totaux sous chaque groupe
+   Même protection que rubrique-header : jamais flex.
+============================================================ */
+tr.rubrique-total {
+  display: table-row !important;
+}
+tr.rubrique-total td {
+  background: var(--surface2) !important;
+  padding: 5px 8px !important;
+  border-top: 1px dashed var(--border) !important;
+  border-bottom: 2px solid var(--border) !important;
+}
+tr.rubrique-total:hover td { background: var(--surface2) !important; }
+
+/* Grille interne du total : layout flex à l'intérieur du td, pas sur le tr */
+.rubrique-total-inner {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  font-size: .72rem;
+}
+.rubrique-total-label {
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  flex-shrink: 0;
+}
+.rubrique-total-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--mono);
+  font-weight: 700;
+  white-space: nowrap;
+}
+.rubrique-total-item .ti-label {
+  font-size: .65rem;
+  font-weight: 600;
+  font-family: var(--font);
+  color: var(--text-muted);
+}
+.rubrique-total-item .ti-val-a  { color: var(--a-color); }
+.rubrique-total-item .ti-val-s  { color: var(--s-color); }
+.rubrique-total-item .ti-val-best { color: var(--green-text); }
+[data-theme="dark"] .rubrique-total-item .ti-val-best { color: #6ee7b7; }
+
+/* Masquer les totaux de rubrique en mode compact */
+body.compact-mode tr.rubrique-total { display: none !important; }
+
+/* ============================================================
    CHECKED-ROW — état "dans le caddie"
    Applicable en mode normal ET en mode compact.
    Aucune rature, uniquement opacité réduite.
@@ -438,7 +490,7 @@ tr.checked-row:hover td {
   #main-table                  { table-layout: auto !important; width: 100% !important; }
 
   #main-table thead tr,
-  #main-tbody tr:not(.rubrique-header) {
+  #main-tbody tr:not(.rubrique-header):not(.rubrique-total) {
     display: flex !important;
     align-items: center !important;
     width: 100% !important;
@@ -535,14 +587,14 @@ tr.checked-row:hover td {
     padding: 6px 4px;
     border-bottom: 1.5px solid var(--border) !important;
   }
-  #main-tbody tr:not(.rubrique-header)               {
+  #main-tbody tr:not(.rubrique-header):not(.rubrique-total)               {
     border-bottom: 1.5px solid var(--border) !important;
   }
   #main-tbody tr:last-child    { border-bottom: none !important; }
   #main-tbody tr td            { border-bottom: none !important; }
 
-  #main-tbody tr:not(.rubrique-header):nth-child(even) { background: var(--surface2); }
-  #main-tbody tr:not(.rubrique-header):hover           { background: var(--bg2) !important; }
+  #main-tbody tr:not(.rubrique-header):not(.rubrique-total):nth-child(even) { background: var(--surface2); }
+  #main-tbody tr:not(.rubrique-header):not(.rubrique-total):hover           { background: var(--bg2) !important; }
 
   .toolbar                     {
     gap: 10px !important;
@@ -776,7 +828,7 @@ tr.checked-row:hover td {
 
   /* ── Chaque ligne : flex stable, hauteur fixe ──────────────── */
   body.compact-mode #main-table thead tr,
-  body.compact-mode #main-tbody tr:not(.rubrique-header) {
+  body.compact-mode #main-tbody tr:not(.rubrique-header):not(.rubrique-total) {
     display: flex !important;
     align-items: center !important;
     min-height: 56px !important;
@@ -785,16 +837,16 @@ tr.checked-row:hover td {
     /* Fond fixe : jamais modifié lors du check */
     background: var(--surface) !important;
   }
-  body.compact-mode #main-tbody tr:not(.rubrique-header):nth-child(even) {
+  body.compact-mode #main-tbody tr:not(.rubrique-header):not(.rubrique-total):nth-child(even) {
     background: var(--surface2) !important;
   }
   /* Retour tactile : uniquement opacity, jamais background */
-  body.compact-mode #main-tbody tr:not(.rubrique-header):active {
+  body.compact-mode #main-tbody tr:not(.rubrique-header):not(.rubrique-total):active {
     opacity: .85 !important;
   }
 
   /* ── Toutes les td : fond hérité, pas de transition ────────── */
-  body.compact-mode #main-tbody tr:not(.rubrique-header) td  {
+  body.compact-mode #main-tbody tr:not(.rubrique-header):not(.rubrique-total) td  {
     background: inherit !important;
     transition: none !important;
     padding: 0 !important;
@@ -844,7 +896,7 @@ tr.checked-row:hover td {
      pour éviter tout flash visuel */
 
   /* ── Séparateur de ligne ────────────────────────────────────── */
-  body.compact-mode #main-tbody tr:not(.rubrique-header)     {
+  body.compact-mode #main-tbody tr:not(.rubrique-header):not(.rubrique-total)     {
     border-bottom: 1.5px solid var(--border) !important;
   }
   body.compact-mode #main-tbody tr:last-child { border-bottom: none !important; }
@@ -1371,62 +1423,120 @@ function rebuildMainTable() {
   const isRowChecked = (row) => !!compactChecked['compact_' + row.id];
 
   // ── 2. Trier : par rubrique (ordre fixe), puis non-cochés avant cochés
-  //    Les produits sans rubrique → placés en dernier sous "Sans rubrique"
   const sorted = [...rows].sort((a, b) => {
     const ra = rubriqueIndex(a.rubrique), rb = rubriqueIndex(b.rubrique);
     if (ra !== rb) return ra - rb;
-    // à même rubrique : non-cochés d'abord
     const ca = isRowChecked(a) ? 1 : 0, cb = isRowChecked(b) ? 1 : 0;
     return ca - cb;
   });
 
-  // ── 3. Construire le DOM avec en-têtes de rubrique ───────────
-  let lastRubrique = null;   // sentinel : commence à null
-  let globalIdx    = 0;
+  // ── 3. Grouper par rubrique pour calculer les totaux ─────────
+  //    On maintient la liste ordonnée des groupes (pour l'ordre d'insertion)
+  const groupOrder  = [];    // noms de rubrique dans l'ordre d'apparition
+  const groupMap    = {};    // rubriqueDisp → [row, …]
 
-  sorted.forEach((row) => {
-    // La rubrique affichée : vide → "Sans rubrique"
-    const rubrique     = row.rubrique || '';
-    const rubriqueDisp = rubrique || 'Sans rubrique';
-
-    // Insérer un en-tête de rubrique chaque fois que le groupe change
-    if (rubriqueDisp !== lastRubrique) {
-      const sepTr = document.createElement('tr');
-      sepTr.className = 'rubrique-header';
-
-      const sepTd = document.createElement('td');
-      // 5 colonnes visibles sur PC : handle + product + auchan + superu + del
-      // La td-compact-check (6e) est masquée sur PC via CSS
-      sepTd.colSpan = 5;
-
-      const lbl = document.createElement('span');
-      lbl.className   = 'rubrique-header-label';
-      lbl.textContent = rubriqueDisp;
-      sepTd.appendChild(lbl);
-      sepTr.appendChild(sepTd);
-      tbody.appendChild(sepTr);
-      lastRubrique = rubriqueDisp;
+  sorted.forEach(row => {
+    const rubriqueDisp = (row.rubrique || '').trim() || 'Sans rubrique';
+    if (!groupMap[rubriqueDisp]) {
+      groupMap[rubriqueDisp] = [];
+      groupOrder.push(rubriqueDisp);
     }
+    groupMap[rubriqueDisp].push(row);
+  });
 
-    const tr = buildRow(row, globalIdx++);
-    tbody.appendChild(tr);
+  // ── 4. Construire le DOM groupe par groupe ───────────────────
+  let globalIdx = 0;
 
-    // Appliquer l'état coché (A1.3)
-    if (isRowChecked(row)) {
-      tr.classList.add('checked-row', 'compact-done');
-    }
+  groupOrder.forEach(rubriqueDisp => {
+    const groupRows = groupMap[rubriqueDisp];
+
+    // ── 4a. En-tête de rubrique ──────────────────────────────
+    const headerTr = document.createElement('tr');
+    headerTr.className = 'rubrique-header';
+    const headerTd = document.createElement('td');
+    headerTd.colSpan = 5;
+    const lbl = document.createElement('span');
+    lbl.className   = 'rubrique-header-label';
+    lbl.textContent = rubriqueDisp;
+    headerTd.appendChild(lbl);
+    headerTr.appendChild(headerTd);
+    tbody.appendChild(headerTr);
+
+    // ── 4b. Lignes produits ──────────────────────────────────
+    let sumA = 0, sumS = 0, sumBest = 0;
+
+    groupRows.forEach(row => {
+      const tr = buildRow(row, globalIdx++);
+      tbody.appendChild(tr);
+      if (isRowChecked(row)) {
+        tr.classList.add('checked-row', 'compact-done');
+      }
+
+      // Accumuler les totaux (tous produits, cochés inclus)
+      const a    = parseFloat(row.auchan);
+      const s    = parseFloat(row.superu);
+      const aOk  = !isNaN(a) && row.auchan !== '';
+      const sOk  = !isNaN(s) && row.superu !== '';
+      if (aOk) sumA += a;
+      if (sOk) sumS += s;
+      if (aOk && sOk) sumBest += Math.min(a, s);
+      else if (aOk)   sumBest += a;
+      else if (sOk)   sumBest += s;
+    });
+
+    // ── 4c. Ligne de totaux de la rubrique ──────────────────
+    const totalTr = document.createElement('tr');
+    totalTr.className = 'rubrique-total';
+    const totalTd = document.createElement('td');
+    totalTd.colSpan = 5;
+
+    const inner = document.createElement('div');
+    inner.className = 'rubrique-total-inner';
+
+    const labelEl = document.createElement('span');
+    labelEl.className   = 'rubrique-total-label';
+    labelEl.textContent = 'Total';
+    inner.appendChild(labelEl);
+
+    // Total Auchan
+    const itemA = document.createElement('span');
+    itemA.className = 'rubrique-total-item';
+    itemA.innerHTML =
+      `<span class="ti-label">🔴 Auchan</span>` +
+      `<span class="ti-val-a">${fmt(sumA)}</span>`;
+    inner.appendChild(itemA);
+
+    // Total Super U
+    const itemS = document.createElement('span');
+    itemS.className = 'rubrique-total-item';
+    itemS.innerHTML =
+      `<span class="ti-label">🔵 Super U</span>` +
+      `<span class="ti-val-s">${fmt(sumS)}</span>`;
+    inner.appendChild(itemS);
+
+    // Total meilleur prix
+    const itemB = document.createElement('span');
+    itemB.className = 'rubrique-total-item';
+    itemB.innerHTML =
+      `<span class="ti-label">✅ Meilleur</span>` +
+      `<span class="ti-val-best">${fmt(sumBest)}</span>`;
+    inner.appendChild(itemB);
+
+    totalTd.appendChild(inner);
+    totalTr.appendChild(totalTd);
+    tbody.appendChild(totalTr);
   });
 
   updateMainTableColors();
 
-  // ── 4. Resynchroniser dataset.idx (exclure les en-têtes de rubrique)
-  Array.from(tbody.querySelectorAll('tr:not(.rubrique-header)')).forEach((r, i) => {
+  // ── 5. Resynchroniser dataset.idx (exclure header et total)
+  Array.from(tbody.querySelectorAll('tr:not(.rubrique-header):not(.rubrique-total)')).forEach((r, i) => {
     r.dataset.idx = i;
   });
 
-  // ── 5. En mode compact, synchroniser les checkboxes
+  // ── 6. En mode compact, synchroniser les checkboxes
   if (compactMode) {
-    tbody.querySelectorAll('tr:not(.rubrique-header)').forEach(tr => {
+    tbody.querySelectorAll('tr:not(.rubrique-header):not(.rubrique-total)').forEach(tr => {
       const cb = tr.querySelector('.compact-checkbox');
       if (cb) {
         const key = 'compact_' + (tr.dataset.id || '');
@@ -1560,7 +1670,7 @@ function makeNumberInput(row, field) {
 }
 
 function updateMainTableColors() {
-  document.querySelectorAll('#main-tbody tr:not(.rubrique-header)').forEach(tr => {
+  document.querySelectorAll('#main-tbody tr:not(.rubrique-header):not(.rubrique-total)').forEach(tr => {
     const row = rows.find(r => r.id === tr.dataset.id);
     if (!row) return;
     const a = parseFloat(row.auchan), s = parseFloat(row.superu);
