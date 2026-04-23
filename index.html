@@ -474,10 +474,6 @@ tr.checked-row:hover td {
    Sur mobile normal (sans .compact-mode) : masquée aussi.
    En mode compact mobile : réactivée dans le bloc compact ci-bas.
 ============================================================ */
-@media (min-width: 601px) {
-  td.td-compact-check { display: none !important; }
-}
-
 /* ============================================================
    MOBILE ≤ 600 px — MODE NORMAL
    flex sur les lignes, colonnes redimensionnées.
@@ -566,13 +562,7 @@ tr.checked-row:hover td {
     border-radius: var(--radius-xs) !important;
   }
 
-  /* Masquer la cellule conteneur aussi (en plus de la checkbox elle-même) */
-  body:not(.compact-mode) td.td-compact-check { display: none !important; }
-
-  /* Masquer la cellule conteneur aussi (en plus de la checkbox elle-même) */
-  body:not(.compact-mode) td.td-compact-check { display: none !important; }
-  /* Masquer la checkbox en mode normal mobile */
-  body:not(.compact-mode) .compact-checkbox   { display: none !important; }
+  /* (checkbox supprimée du tableau normal) */
 
   #main-table th               {
     font-size: .65rem !important;
@@ -702,29 +692,7 @@ tr.checked-row:hover td {
 /* Suppression de la rature — style atténué uniquement */
 .shop-list ul li.checked .item-name  { color: var(--text-faint); opacity: .6; }
 .shop-list ul li.checked .item-price { color: var(--text-faint); opacity: .6; }
-.item-check {
-  width: 20px; height: 20px;
-  min-width: 20px;
-  border-radius: 5px;
-  border: 2px solid var(--border);
-  cursor: pointer;
-  appearance: none;
-  -webkit-appearance: none;
-  background: var(--surface);
-  transition: all .15s;
-  position: relative;
-}
-.shop-list.auchan .item-check:checked { background: var(--a-color); border-color: var(--a-color); }
-.shop-list.superu .item-check:checked { background: var(--s-color); border-color: var(--s-color); }
-.item-check:checked::after {
-  content: '';
-  position: absolute;
-  left: 4px; top: 1px;
-  width: 8px; height: 11px;
-  border-right: 2px solid #fff;
-  border-bottom: 2px solid #fff;
-  transform: rotate(45deg);
-}
+/* (checklist supprimée) */
 .list-total {
   margin-top: 12px;
   padding-top: 10px;
@@ -820,7 +788,10 @@ tr.checked-row:hover td {
 ============================================================ */
 @media (max-width: 600px) {
 
-  /* ── En mode compact : masquer la liste optimisée (card-lists) ─ */
+  /* ── En mode compact : afficher la liste compacte, masquer le tableau + liste optimisée ─ */
+  #card-compact-store-lists { display: none; }
+  body.compact-mode #card-compact-store-lists { display: block; }
+  body.compact-mode #card-tableau { display: none; }
   body.compact-mode #card-lists { display: none !important; }
 
   /* ── Masquer sections inutiles en mode courses ─────────────── */
@@ -925,61 +896,7 @@ tr.checked-row:hover td {
   }
   body.compact-mode #main-tbody tr:last-child { border-bottom: none !important; }
 
-  /* ──────────────────────────────────────────────────────────────
-     CELLULE CHECKBOX COMPACTE
-     Visible uniquement quand body.compact-mode est actif.
-     En mode normal, td.td-compact-check reste display:none
-     (règle globale au-dessus du media query).
-  ────────────────────────────────────────────────────────────── */
-  body.compact-mode td.td-compact-check {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    flex: none !important;
-    width: 56px !important;
-    min-width: 56px !important;
-    max-width: 56px !important;
-    padding: 0 10px !important;
-    background: inherit !important;
-    transition: none !important;
-    overflow: visible !important;
-  }
-
-  /* La checkbox elle-même */
-  body.compact-mode .compact-checkbox {
-    width: 28px !important;
-    height: 28px !important;
-    min-width: 28px !important;
-    flex-shrink: 0 !important;
-    border-radius: 8px !important;
-    border: 2.5px solid var(--border) !important;
-    cursor: pointer !important;
-    appearance: none !important;
-    -webkit-appearance: none !important;
-    background: var(--surface) !important;
-    /* Aucune transition pour éviter tout saut visuel */
-    transition: none !important;
-    position: relative !important;
-    display: block !important;
-    /* Pas de box-shadow, outline, ni changement de fond sur la ligne parente */
-    outline: none !important;
-    box-shadow: none !important;
-  }
-  body.compact-mode .compact-checkbox:checked {
-    background: var(--accent) !important;
-    border-color: var(--accent) !important;
-    /* Pas de transition */
-    transition: none !important;
-  }
-  body.compact-mode .compact-checkbox:checked::after {
-    content: '';
-    position: absolute;
-    left: 7px; top: 3px;
-    width: 10px; height: 14px;
-    border-right: 2.5px solid #fff;
-    border-bottom: 2.5px solid #fff;
-    transform: rotate(45deg);
-  }
+  /* (checkbox du tableau supprimée ; les cases à cocher sont dans la liste compacte) */
 
   /* ── En-tête compact ────────────────────────────────────────── */
   body.compact-mode #main-table thead tr {
@@ -1007,6 +924,101 @@ tr.checked-row:hover td {
     border-radius: 99px;
     margin-left: 4px;
   }
+
+  /* ── Listes compactes (checkbox + nom + prix + total) ───────── */
+  body.compact-mode .compact-lists-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  body.compact-mode .compact-store-list {
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+  }
+  body.compact-mode .compact-store-list.auchan { background: var(--a-light); border-color: var(--a-border); }
+  body.compact-mode .compact-store-list.superu { background: var(--s-light); border-color: var(--s-border); }
+  body.compact-mode .compact-store-list.equal  { background: #fef9c3; border-color: rgba(133,77,14,.25); }
+  [data-theme="dark"] body.compact-mode .compact-store-list.equal { background: #422006; border-color: rgba(253,230,138,.25); }
+
+  body.compact-mode .compact-store-list h3 {
+    font-size: .72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    margin-bottom: 8px;
+  }
+  body.compact-mode .compact-store-list.auchan h3 { color: var(--a-color); }
+  body.compact-mode .compact-store-list.superu h3 { color: var(--s-color); }
+  body.compact-mode .compact-store-list.equal  h3 { color: #854d0e; }
+  [data-theme="dark"] body.compact-mode .compact-store-list.equal h3 { color: #fde68a; }
+
+  body.compact-mode .compact-store-list ul { list-style: none; }
+  body.compact-mode .compact-store-list li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0;
+    border-bottom: 1px dashed rgba(128,128,128,.15);
+    font-size: .92rem;
+  }
+  body.compact-mode .compact-store-list li:last-child { border-bottom: none; }
+  body.compact-mode .compact-item-name {
+    flex: 1;
+    min-width: 0;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+  body.compact-mode .compact-item-price {
+    font-family: var(--mono);
+    font-weight: 800;
+    white-space: nowrap;
+    font-size: .9rem;
+  }
+
+  body.compact-mode .compact-item-check {
+    width: 26px;
+    height: 26px;
+    min-width: 26px;
+    border-radius: 8px;
+    border: 2.5px solid var(--border);
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background: var(--surface);
+    position: relative;
+  }
+  body.compact-mode .compact-store-list.auchan .compact-item-check:checked { background: var(--a-color); border-color: var(--a-color); }
+  body.compact-mode .compact-store-list.superu .compact-item-check:checked { background: var(--s-color); border-color: var(--s-color); }
+  body.compact-mode .compact-store-list.equal  .compact-item-check:checked { background: var(--accent);  border-color: var(--accent); }
+  body.compact-mode .compact-item-check:checked::after {
+    content: '';
+    position: absolute;
+    left: 7px; top: 3px;
+    width: 9px; height: 13px;
+    border-right: 2.5px solid #fff;
+    border-bottom: 2.5px solid #fff;
+    transform: rotate(45deg);
+  }
+  body.compact-mode .compact-store-list li.checked .compact-item-name,
+  body.compact-mode .compact-store-list li.checked .compact-item-price {
+    color: var(--text-faint);
+    opacity: .65;
+  }
+
+  body.compact-mode .compact-list-total {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 2px solid rgba(128,128,128,.15);
+    font-weight: 900;
+    font-size: .95rem;
+    font-family: var(--mono);
+    display: flex;
+    justify-content: space-between;
+  }
+  body.compact-mode .compact-store-list.auchan .compact-list-total { color: var(--a-color); }
+  body.compact-mode .compact-store-list.superu .compact-list-total { color: var(--s-color); }
 }
 </style>
 </head>
@@ -1068,6 +1080,34 @@ tr.checked-row:hover td {
       </thead>
       <tbody id="main-tbody"></tbody>
     </table>
+  </div>
+</div>
+
+<!-- MODE COMPACT (MOBILE) — LISTES PAR MAGASIN (seul endroit avec cases à cocher) -->
+<div class="card" id="card-compact-store-lists">
+  <div class="card-title">🧾 Liste (mode compact)</div>
+  <div class="compact-lists-grid">
+    <div class="compact-store-list auchan">
+      <h3>🔴 Moins cher chez Auchan</h3>
+      <ul id="compact-list-auchan"></ul>
+      <div class="compact-list-total" id="compact-total-auchan" style="display:none">
+        <span>Total</span><span id="compact-total-auchan-val"></span>
+      </div>
+    </div>
+    <div class="compact-store-list superu">
+      <h3>🔵 Moins cher chez Super U</h3>
+      <ul id="compact-list-superu"></ul>
+      <div class="compact-list-total" id="compact-total-superu" style="display:none">
+        <span>Total</span><span id="compact-total-superu-val"></span>
+      </div>
+    </div>
+    <div class="compact-store-list equal">
+      <h3>🟡 Au choix (même prix)</h3>
+      <ul id="compact-list-equal"></ul>
+      <div class="compact-list-total" id="compact-total-equal" style="display:none">
+        <span>Total</span><span id="compact-total-equal-val"></span>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1312,19 +1352,100 @@ window.toggleCompact = function() {
     btn.classList.toggle('active', compactMode);
     btn.textContent = compactMode ? '✕ Quitter' : '📋 Compact';
   }
-  // Restaurer l'état des checkboxes compactes depuis compactChecked
-  if (compactMode) {
-    document.querySelectorAll('#main-tbody tr').forEach(tr => {
-      const cb = tr.querySelector('.compact-checkbox');
-      if (cb) {
-        const key = 'compact_' + (tr.dataset.id || '');
-        cb.checked = !!compactChecked[key];
-        tr.classList.toggle('compact-done', cb.checked);
-      }
-    });
-  }
+  if (compactMode) renderCompactStoreLists();
   try { localStorage.setItem('comparateur_compact', JSON.stringify(compactMode)); } catch(_) {}
 };
+
+/* ============================================================
+   MODE COMPACT (mobile) — liste + cases à cocher (unique endroit)
+============================================================ */
+function renderCompactStoreLists() {
+  const ulA = document.getElementById('compact-list-auchan');
+  const ulS = document.getElementById('compact-list-superu');
+  const ulE = document.getElementById('compact-list-equal');
+  if (!ulA || !ulS || !ulE) return;
+
+  ulA.innerHTML = '';
+  ulS.innerHTML = '';
+  ulE.innerHTML = '';
+
+  const totBoxA = document.getElementById('compact-total-auchan');
+  const totBoxS = document.getElementById('compact-total-superu');
+  const totBoxE = document.getElementById('compact-total-equal');
+  const totValA = document.getElementById('compact-total-auchan-val');
+  const totValS = document.getElementById('compact-total-superu-val');
+  const totValE = document.getElementById('compact-total-equal-val');
+
+  let cntA = 0, cntS = 0, cntE = 0;
+  let sumA = 0, sumS = 0, sumE = 0;
+
+  rows.forEach(row => {
+    const name = (row.product || '').trim();
+    if (!name) return;
+
+    const a = parseFloat(row.auchan), s = parseFloat(row.superu);
+    const aOk = !isNaN(a) && row.auchan !== '';
+    const sOk = !isNaN(s) && row.superu !== '';
+    if (!aOk && !sOk) return;
+
+    let bucket = 'equal';
+    let price = null;
+    if (aOk && sOk) {
+      if (a < s) { bucket = 'auchan'; price = a; }
+      else if (s < a) { bucket = 'superu'; price = s; }
+      else { bucket = 'equal'; price = a; }
+    } else if (aOk) { bucket = 'auchan'; price = a; }
+    else { bucket = 'superu'; price = s; }
+
+    const ul = bucket === 'auchan' ? ulA : bucket === 'superu' ? ulS : ulE;
+    const li = document.createElement('li');
+
+    const ccKey = 'compact_' + row.id;
+    const isChk = !!compactChecked[ccKey];
+    if (isChk) li.classList.add('checked');
+
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.className = 'compact-item-check';
+    cb.checked = isChk;
+    cb.addEventListener('change', () => {
+      compactChecked[ccKey] = cb.checked;
+      saveCompactChecked();
+      li.classList.toggle('checked', cb.checked);
+      renderAll();
+    });
+
+    const nm = document.createElement('span');
+    nm.className = 'compact-item-name';
+    nm.textContent = name;
+
+    const pr = document.createElement('span');
+    pr.className = 'compact-item-price';
+    pr.textContent = fmt(price);
+
+    li.appendChild(cb);
+    li.appendChild(nm);
+    li.appendChild(pr);
+    ul.appendChild(li);
+
+    if (bucket === 'auchan') { cntA++; sumA += price; }
+    else if (bucket === 'superu') { cntS++; sumS += price; }
+    else { cntE++; sumE += price; }
+  });
+
+  if (!cntA) ulA.innerHTML = '<li><span class="empty-msg">Aucun produit.</span></li>';
+  if (!cntS) ulS.innerHTML = '<li><span class="empty-msg">Aucun produit.</span></li>';
+  if (!cntE) ulE.innerHTML = '<li><span class="empty-msg">Aucun produit.</span></li>';
+
+  const showTot = (box, valEl, cnt, sum) => {
+    if (!box || !valEl) return;
+    box.style.display = cnt ? 'flex' : 'none';
+    valEl.textContent = fmt(sum);
+  };
+  showTot(totBoxA, totValA, cntA, sumA);
+  showTot(totBoxS, totValS, cntS, sumS);
+  showTot(totBoxE, totValE, cntE, sumE);
+}
 
 
 /* ============================================================
@@ -1433,6 +1554,7 @@ function renderAll() {
   rebuildMainTable();
   renderRecoTable();
   if (!compactMode) renderShoppingLists();
+  if (compactMode) renderCompactStoreLists();
   renderTotals();
   document.getElementById('row-count').textContent =
     rows.length + ' produit' + (rows.length > 1 ? 's' : '');
@@ -1456,6 +1578,7 @@ function rebuildMainTable() {
   const sorted = [...rows].sort((a, b) => {
     const ra = rubriqueIndex(a.rubrique), rb = rubriqueIndex(b.rubrique);
     if (ra !== rb) return ra - rb;
+    if (!compactMode) return 0;
     const ca = isRowChecked(a) ? 1 : 0, cb = isRowChecked(b) ? 1 : 0;
     return ca - cb;
   });
@@ -1498,7 +1621,7 @@ function rebuildMainTable() {
     groupRows.forEach(row => {
       const tr = buildRow(row, globalIdx++);
       tbody.appendChild(tr);
-      if (isRowChecked(row)) {
+      if (compactMode && isRowChecked(row)) {
         tr.classList.add('checked-row', 'compact-done');
       }
 
@@ -1564,16 +1687,6 @@ function rebuildMainTable() {
     r.dataset.idx = i;
   });
 
-  // ── 6. En mode compact, synchroniser les checkboxes
-  if (compactMode) {
-    tbody.querySelectorAll('tr:not(.rubrique-header):not(.rubrique-total)').forEach(tr => {
-      const cb = tr.querySelector('.compact-checkbox');
-      if (cb) {
-        const key = 'compact_' + (tr.dataset.id || '');
-        cb.checked = !!compactChecked[key];
-      }
-    });
-  }
 }
 
 function buildRow(row, idx) {
@@ -1650,30 +1763,6 @@ function buildRow(row, idx) {
   btn.addEventListener('click', () => window.deleteRow(row.id));
   tdD.appendChild(btn);
   tr.appendChild(tdD);
-
-  // ── Cellule checkbox mode compact ─────────────────────────────
-  // Toujours présente dans le DOM, masquée en mode normal par CSS.
-  const tdCC = document.createElement('td');
-  tdCC.className = 'td-compact-check';
-  const cc = document.createElement('input');
-  cc.type      = 'checkbox';
-  cc.className = 'compact-checkbox';
-  const ccKey  = 'compact_' + row.id;
-  cc.checked   = !!compactChecked[ccKey];
-
-  cc.addEventListener('change', () => {
-    const isChecked = cc.checked;
-
-    // Sauvegarder l'état localement
-    compactChecked[ccKey] = isChecked;
-    saveCompactChecked();
-
-    // Appliquer style + réorganisation (mode compact ET normal)
-    applyRowCheckedState(tr, isChecked);
-  });
-
-  tdCC.appendChild(cc);
-  tr.appendChild(tdCC);
 
   // ── Drag & drop ───────────────────────────────────────────────
   tr.addEventListener('dragstart', onDragStart);
@@ -1789,22 +1878,7 @@ function renderShoppingLists() {
 }
 
 function appendListItem(ul, product, price, store) {
-  const key   = store + '_' + product.trim();
-  const isChk = !!checked[key];
-
   const li = document.createElement('li');
-  if (isChk) li.classList.add('checked');
-
-  const cb = document.createElement('input');
-  cb.type      = 'checkbox';
-  cb.className = 'item-check';
-  cb.checked   = isChk;
-  cb.addEventListener('change', () => {
-    checked[key] = cb.checked;
-    li.classList.toggle('checked', cb.checked);
-    pruneChecked();
-    save();
-  });
 
   const nm = document.createElement('span');
   nm.className   = 'item-name';
@@ -1814,7 +1888,6 @@ function appendListItem(ul, product, price, store) {
   pr.className   = 'item-price';
   pr.textContent = fmt(price);
 
-  li.appendChild(cb);
   li.appendChild(nm);
   li.appendChild(pr);
   ul.appendChild(li);
