@@ -828,6 +828,7 @@ tr.checked-row:hover td {
   #card-compact-store-lists { display: none; }
   body.compact-mode #card-compact-store-lists { display: block; }
   body.compact-mode #card-tableau { display: none; }
+  body.compact-mode #card-lists { display: none !important; }
 
   /* ── Masquer sections inutiles en mode courses ─────────────── */
   body.compact-mode #card-totaux,
@@ -1060,6 +1061,26 @@ tr.checked-row:hover td {
     color: var(--text-faint);
     opacity: .65;
   }
+
+  body.compact-mode .compact-item-price {
+    font-family: var(--mono);
+    font-weight: 800;
+    white-space: nowrap;
+    font-size: .9rem;
+  }
+
+  body.compact-mode .compact-list-total {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 2px solid rgba(128,128,128,.15);
+    font-weight: 900;
+    font-size: .95rem;
+    font-family: var(--mono);
+    display: flex;
+    justify-content: space-between;
+  }
+  body.compact-mode .compact-store-list.auchan .compact-list-total { color: var(--a-color); }
+  body.compact-mode .compact-store-list.superu .compact-list-total { color: var(--s-color); }
 }
 </style>
 </head>
@@ -1131,14 +1152,23 @@ tr.checked-row:hover td {
     <div class="compact-store-list auchan">
       <h3>🔴 Moins cher chez Auchan</h3>
       <ul id="compact-list-auchan"></ul>
+      <div class="compact-list-total" id="compact-total-auchan" style="display:none">
+        <span>Total</span><span id="compact-total-auchan-val"></span>
+      </div>
     </div>
     <div class="compact-store-list superu">
       <h3>🔵 Moins cher chez Super U</h3>
       <ul id="compact-list-superu"></ul>
+      <div class="compact-list-total" id="compact-total-superu" style="display:none">
+        <span>Total</span><span id="compact-total-superu-val"></span>
+      </div>
     </div>
     <div class="compact-store-list equal">
       <h3>🟡 Au choix (même prix)</h3>
       <ul id="compact-list-equal"></ul>
+      <div class="compact-list-total" id="compact-total-equal" style="display:none">
+        <span>Total</span><span id="compact-total-equal-val"></span>
+      </div>
     </div>
   </div>
 </div>
@@ -1180,7 +1210,7 @@ tr.checked-row:hover td {
 </div>
 
 <!-- LISTES DE COURSES -->
-<div class="card">
+<div class="card" id="card-lists">
   <div class="card-title">🛍 Listes de courses optimisées</div>
   <div class="lists-grid">
     <div class="shop-list auchan">
@@ -1414,7 +1444,15 @@ function renderCompactStoreLists() {
   ulS.innerHTML = '';
   ulE.innerHTML = '';
 
+  const totBoxA = document.getElementById('compact-total-auchan');
+  const totBoxS = document.getElementById('compact-total-superu');
+  const totBoxE = document.getElementById('compact-total-equal');
+  const totValA = document.getElementById('compact-total-auchan-val');
+  const totValS = document.getElementById('compact-total-superu-val');
+  const totValE = document.getElementById('compact-total-equal-val');
+
   let cntA = 0, cntS = 0, cntE = 0;
+  let sumA = 0, sumS = 0, sumE = 0;
 
   rows.forEach(row => {
     const name = (row.product || '').trim();
@@ -1426,10 +1464,11 @@ function renderCompactStoreLists() {
     if (!aOk && !sOk) return;
 
     let bucket = 'equal';
+    let price = null;
     if (aOk && sOk) {
-      if (a < s) bucket = 'auchan';
-      else if (s < a) bucket = 'superu';
-      else bucket = 'equal';
+      if (a < s) { bucket = 'auchan'; price = a; }
+      else if (s < a) { bucket = 'superu'; price = s; }
+      else { bucket = 'equal'; price = a; }
     } else if (aOk) bucket = 'auchan';
     else bucket = 'superu';
 
@@ -1448,24 +1487,48 @@ function renderCompactStoreLists() {
       compactChecked[ccKey] = cb.checked;
       saveCompactChecked();
       li.classList.toggle('checked', cb.checked);
+      // Synchroniser avec la liste optimisée (localStorage `checked`) sans changer les clés existantes
+      const prodKey = name;
+      checked['auchan_' + prodKey] = cb.checked;
+      checked['superu_' + prodKey] = cb.checked;
+      pruneChecked();
+      save();
+      // Rafraîchir le tableau pour garder l'ordre "cochés en bas"
+      renderAll();
     });
 
     const nm = document.createElement('span');
     nm.className = 'compact-item-name';
     nm.textContent = name;
 
+    const pr = document.createElement('span');
+    pr.className = 'compact-item-price';
+    // prix affiché = moins cher (ou égalité) / fallback sur le seul prix dispo
+    if (price == null) price = aOk ? a : s;
+    pr.textContent = fmt(price);
+
     li.appendChild(cb);
     li.appendChild(nm);
+    li.appendChild(pr);
     ul.appendChild(li);
 
-    if (bucket === 'auchan') cntA++;
-    else if (bucket === 'superu') cntS++;
-    else cntE++;
+    if (bucket === 'auchan') { cntA++; sumA += price; }
+    else if (bucket === 'superu') { cntS++; sumS += price; }
+    else { cntE++; sumE += price; }
   });
 
   if (!cntA) ulA.innerHTML = '<li><span class="empty-msg">Aucun produit.</span></li>';
   if (!cntS) ulS.innerHTML = '<li><span class="empty-msg">Aucun produit.</span></li>';
   if (!cntE) ulE.innerHTML = '<li><span class="empty-msg">Aucun produit.</span></li>';
+
+  const showTot = (box, valEl, cnt, sum) => {
+    if (!box || !valEl) return;
+    box.style.display = cnt ? 'flex' : 'none';
+    valEl.textContent = fmt(sum);
+  };
+  showTot(totBoxA, totValA, cntA, sumA);
+  showTot(totBoxS, totValS, cntS, sumS);
+  showTot(totBoxE, totValE, cntE, sumE);
 }
 
 /* ============================================================
@@ -1573,7 +1636,7 @@ function pruneChecked() {
 function renderAll() {
   rebuildMainTable();
   renderRecoTable();
-  renderShoppingLists();
+  if (!compactMode) renderShoppingLists();
   renderCompactStoreLists();
   renderTotals();
   document.getElementById('row-count').textContent =
@@ -1583,7 +1646,7 @@ function renderAll() {
 function updateFromInput() {
   updateMainTableColors();
   renderRecoTable();
-  renderShoppingLists();
+  if (!compactMode) renderShoppingLists();
   renderTotals();
 }
 
