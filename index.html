@@ -453,8 +453,7 @@ tr.rubrique-total:hover td { background: var(--surface2) !important; }
 .rubrique-total-item .ti-val-best { color: var(--green-text); }
 [data-theme="dark"] .rubrique-total-item .ti-val-best { color: #6ee7b7; }
 
-/* Masquer les totaux de rubrique en mode compact */
-body.compact-mode tr.rubrique-total { display: none !important; }
+/* En mode compact : garder les totaux (format compact géré en mobile) */
 
 /* ============================================================
    CHECKED-ROW — état "dans le caddie"
@@ -788,9 +787,6 @@ tr.checked-row:hover td {
   display: none;
 }
 
-/* Card des listes compactes : cachée hors mode compact mobile */
-#card-compact-store-lists { display: none; }
-
 @media (max-width: 600px) {
   .compact-btn {
     display: flex;
@@ -824,10 +820,7 @@ tr.checked-row:hover td {
 ============================================================ */
 @media (max-width: 600px) {
 
-  /* ── En mode compact : afficher les 3 listes, masquer le tableau ─ */
-  #card-compact-store-lists { display: none; }
-  body.compact-mode #card-compact-store-lists { display: block; }
-  body.compact-mode #card-tableau { display: none; }
+  /* ── En mode compact : masquer la liste optimisée (card-lists) ─ */
   body.compact-mode #card-lists { display: none !important; }
 
   /* ── Masquer sections inutiles en mode courses ─────────────── */
@@ -862,14 +855,36 @@ tr.checked-row:hover td {
     border-bottom: none !important;
   }
 
-  /* ── Masquer colonnes prix, bouton supprimer, handle ───────── */
-  body.compact-mode th.th-a,
-  body.compact-mode th.th-s,
-  body.compact-mode td[data-cell="auchan"],
-  body.compact-mode td[data-cell="superu"],
+  /* ── Masquer bouton supprimer, handle ──────────────────────── */
   body.compact-mode td.td-del,
   body.compact-mode th.th-handle,
   body.compact-mode td.td-handle       { display: none !important; }
+
+  /* ── Prix : visibles, compacts, non éditables ──────────────── */
+  body.compact-mode th.th-a,
+  body.compact-mode th.th-s,
+  body.compact-mode td[data-cell="auchan"],
+  body.compact-mode td[data-cell="superu"] {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex: none !important;
+    width: 74px !important;
+    min-width: 74px !important;
+    max-width: 74px !important;
+    padding: 0 6px !important;
+    background: inherit !important;
+  }
+  body.compact-mode td[data-cell="auchan"] input[type="number"],
+  body.compact-mode td[data-cell="superu"] input[type="number"] {
+    min-height: 40px !important;
+    padding: 0 !important;
+    font-size: .85rem !important;
+    pointer-events: none;
+    border-color: transparent !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
 
   /* ── Colonne produit en flex:1 ────────────────────────────── */
   body.compact-mode td.td-product,
@@ -976,6 +991,11 @@ tr.checked-row:hover td {
     padding: 10px 12px !important;
   }
 
+  /* ── Totaux de rubrique : affichage compact ─────────────────── */
+  body.compact-mode tr.rubrique-total td { padding: 8px 10px !important; }
+  body.compact-mode .rubrique-total-inner { font-size: .68rem !important; gap: 6px 12px !important; }
+  body.compact-mode .rubrique-total-item { font-size: .70rem !important; }
+
   /* ── Badge "Mode courses" dans le titre de la card ──────────── */
   body.compact-mode #card-tableau .card-title::after {
     content: '🛒 Mode courses';
@@ -987,100 +1007,6 @@ tr.checked-row:hover td {
     border-radius: 99px;
     margin-left: 4px;
   }
-
-  /* ── Listes compactes par magasin (checkbox + nom) ──────────── */
-  body.compact-mode .compact-lists-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-  body.compact-mode .compact-store-list {
-    border-radius: var(--radius-sm);
-    padding: 12px;
-    border: 1px solid var(--border);
-    background: var(--surface2);
-  }
-  body.compact-mode .compact-store-list.auchan { background: var(--a-light); border-color: var(--a-border); }
-  body.compact-mode .compact-store-list.superu { background: var(--s-light); border-color: var(--s-border); }
-  body.compact-mode .compact-store-list.equal  { background: #fef9c3; border-color: rgba(133,77,14,.25); }
-  [data-theme="dark"] body.compact-mode .compact-store-list.equal { background: #422006; border-color: rgba(253,230,138,.25); }
-
-  body.compact-mode .compact-store-list h3 {
-    font-size: .72rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: .6px;
-    margin-bottom: 8px;
-  }
-  body.compact-mode .compact-store-list.auchan h3 { color: var(--a-color); }
-  body.compact-mode .compact-store-list.superu h3 { color: var(--s-color); }
-  body.compact-mode .compact-store-list.equal  h3 { color: #854d0e; }
-  [data-theme="dark"] body.compact-mode .compact-store-list.equal h3 { color: #fde68a; }
-
-  body.compact-mode .compact-store-list ul { list-style: none; }
-  body.compact-mode .compact-store-list li {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 6px 0;
-    border-bottom: 1px dashed rgba(128,128,128,.15);
-    font-size: .92rem;
-  }
-  body.compact-mode .compact-store-list li:last-child { border-bottom: none; }
-  body.compact-mode .compact-item-name {
-    flex: 1;
-    min-width: 0;
-    word-break: break-word;
-    overflow-wrap: anywhere;
-  }
-  body.compact-mode .compact-item-check {
-    width: 26px;
-    height: 26px;
-    min-width: 26px;
-    border-radius: 8px;
-    border: 2.5px solid var(--border);
-    cursor: pointer;
-    appearance: none;
-    -webkit-appearance: none;
-    background: var(--surface);
-    position: relative;
-  }
-  body.compact-mode .compact-store-list.auchan .compact-item-check:checked { background: var(--a-color); border-color: var(--a-color); }
-  body.compact-mode .compact-store-list.superu .compact-item-check:checked { background: var(--s-color); border-color: var(--s-color); }
-  body.compact-mode .compact-store-list.equal  .compact-item-check:checked { background: var(--accent);  border-color: var(--accent); }
-  body.compact-mode .compact-item-check:checked::after {
-    content: '';
-    position: absolute;
-    left: 7px; top: 3px;
-    width: 9px; height: 13px;
-    border-right: 2.5px solid #fff;
-    border-bottom: 2.5px solid #fff;
-    transform: rotate(45deg);
-  }
-  body.compact-mode .compact-store-list li.checked .compact-item-name {
-    color: var(--text-faint);
-    opacity: .65;
-  }
-
-  body.compact-mode .compact-item-price {
-    font-family: var(--mono);
-    font-weight: 800;
-    white-space: nowrap;
-    font-size: .9rem;
-  }
-
-  body.compact-mode .compact-list-total {
-    margin-top: 10px;
-    padding-top: 8px;
-    border-top: 2px solid rgba(128,128,128,.15);
-    font-weight: 900;
-    font-size: .95rem;
-    font-family: var(--mono);
-    display: flex;
-    justify-content: space-between;
-  }
-  body.compact-mode .compact-store-list.auchan .compact-list-total { color: var(--a-color); }
-  body.compact-mode .compact-store-list.superu .compact-list-total { color: var(--s-color); }
 }
 </style>
 </head>
@@ -1142,34 +1068,6 @@ tr.checked-row:hover td {
       </thead>
       <tbody id="main-tbody"></tbody>
     </table>
-  </div>
-</div>
-
-<!-- MODE COMPACT (MOBILE) — LISTES PAR MAGASIN -->
-<div class="card" id="card-compact-store-lists">
-  <div class="card-title">🧾 Liste (mode compact)</div>
-  <div class="compact-lists-grid">
-    <div class="compact-store-list auchan">
-      <h3>🔴 Moins cher chez Auchan</h3>
-      <ul id="compact-list-auchan"></ul>
-      <div class="compact-list-total" id="compact-total-auchan" style="display:none">
-        <span>Total</span><span id="compact-total-auchan-val"></span>
-      </div>
-    </div>
-    <div class="compact-store-list superu">
-      <h3>🔵 Moins cher chez Super U</h3>
-      <ul id="compact-list-superu"></ul>
-      <div class="compact-list-total" id="compact-total-superu" style="display:none">
-        <span>Total</span><span id="compact-total-superu-val"></span>
-      </div>
-    </div>
-    <div class="compact-store-list equal">
-      <h3>🟡 Au choix (même prix)</h3>
-      <ul id="compact-list-equal"></ul>
-      <div class="compact-list-total" id="compact-total-equal" style="display:none">
-        <span>Total</span><span id="compact-total-equal-val"></span>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -1425,111 +1323,9 @@ window.toggleCompact = function() {
       }
     });
   }
-  if (compactMode) renderCompactStoreLists();
   try { localStorage.setItem('comparateur_compact', JSON.stringify(compactMode)); } catch(_) {}
 };
 
-/* ============================================================
-   MODE COMPACT — LISTES PAR MAGASIN (Auchan / Super U / Au choix)
-   - Affiche uniquement : checkbox + nom
-   - S'appuie sur `rows` (tri existant) + `compactChecked` (localStorage)
-============================================================ */
-function renderCompactStoreLists() {
-  const ulA = document.getElementById('compact-list-auchan');
-  const ulS = document.getElementById('compact-list-superu');
-  const ulE = document.getElementById('compact-list-equal');
-  if (!ulA || !ulS || !ulE) return;
-
-  ulA.innerHTML = '';
-  ulS.innerHTML = '';
-  ulE.innerHTML = '';
-
-  const totBoxA = document.getElementById('compact-total-auchan');
-  const totBoxS = document.getElementById('compact-total-superu');
-  const totBoxE = document.getElementById('compact-total-equal');
-  const totValA = document.getElementById('compact-total-auchan-val');
-  const totValS = document.getElementById('compact-total-superu-val');
-  const totValE = document.getElementById('compact-total-equal-val');
-
-  let cntA = 0, cntS = 0, cntE = 0;
-  let sumA = 0, sumS = 0, sumE = 0;
-
-  rows.forEach(row => {
-    const name = (row.product || '').trim();
-    if (!name) return;
-
-    const a = parseFloat(row.auchan), s = parseFloat(row.superu);
-    const aOk = !isNaN(a) && row.auchan !== '';
-    const sOk = !isNaN(s) && row.superu !== '';
-    if (!aOk && !sOk) return;
-
-    let bucket = 'equal';
-    let price = null;
-    if (aOk && sOk) {
-      if (a < s) { bucket = 'auchan'; price = a; }
-      else if (s < a) { bucket = 'superu'; price = s; }
-      else { bucket = 'equal'; price = a; }
-    } else if (aOk) bucket = 'auchan';
-    else bucket = 'superu';
-
-    const ul = bucket === 'auchan' ? ulA : bucket === 'superu' ? ulS : ulE;
-    const li = document.createElement('li');
-
-    const ccKey = 'compact_' + row.id;
-    const isChk = !!compactChecked[ccKey];
-    if (isChk) li.classList.add('checked');
-
-    const cb = document.createElement('input');
-    cb.type = 'checkbox';
-    cb.className = 'compact-item-check';
-    cb.checked = isChk;
-    cb.addEventListener('change', () => {
-      compactChecked[ccKey] = cb.checked;
-      saveCompactChecked();
-      li.classList.toggle('checked', cb.checked);
-      // Synchroniser avec la liste optimisée (localStorage `checked`) sans changer les clés existantes
-      const prodKey = name;
-      checked['auchan_' + prodKey] = cb.checked;
-      checked['superu_' + prodKey] = cb.checked;
-      pruneChecked();
-      save();
-      // Rafraîchir le tableau pour garder l'ordre "cochés en bas"
-      renderAll();
-    });
-
-    const nm = document.createElement('span');
-    nm.className = 'compact-item-name';
-    nm.textContent = name;
-
-    const pr = document.createElement('span');
-    pr.className = 'compact-item-price';
-    // prix affiché = moins cher (ou égalité) / fallback sur le seul prix dispo
-    if (price == null) price = aOk ? a : s;
-    pr.textContent = fmt(price);
-
-    li.appendChild(cb);
-    li.appendChild(nm);
-    li.appendChild(pr);
-    ul.appendChild(li);
-
-    if (bucket === 'auchan') { cntA++; sumA += price; }
-    else if (bucket === 'superu') { cntS++; sumS += price; }
-    else { cntE++; sumE += price; }
-  });
-
-  if (!cntA) ulA.innerHTML = '<li><span class="empty-msg">Aucun produit.</span></li>';
-  if (!cntS) ulS.innerHTML = '<li><span class="empty-msg">Aucun produit.</span></li>';
-  if (!cntE) ulE.innerHTML = '<li><span class="empty-msg">Aucun produit.</span></li>';
-
-  const showTot = (box, valEl, cnt, sum) => {
-    if (!box || !valEl) return;
-    box.style.display = cnt ? 'flex' : 'none';
-    valEl.textContent = fmt(sum);
-  };
-  showTot(totBoxA, totValA, cntA, sumA);
-  showTot(totBoxS, totValS, cntS, sumS);
-  showTot(totBoxE, totValE, cntE, sumE);
-}
 
 /* ============================================================
    LOGIQUE CASES À COCHER — "DANS LE CADDIE"
@@ -1637,7 +1433,6 @@ function renderAll() {
   rebuildMainTable();
   renderRecoTable();
   if (!compactMode) renderShoppingLists();
-  renderCompactStoreLists();
   renderTotals();
   document.getElementById('row-count').textContent =
     rows.length + ' produit' + (rows.length > 1 ? 's' : '');
