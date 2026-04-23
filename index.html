@@ -964,6 +964,18 @@ tr.checked-row:hover td {
     font-size: .92rem;
   }
   body.compact-mode .compact-store-list li:last-child { border-bottom: none; }
+  body.compact-mode .compact-store-list li.compact-rubrique-sep {
+    padding: 8px 0 6px;
+    font-size: .72rem;
+    font-weight: 900;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    border-bottom: 1px dashed rgba(128,128,128,.15);
+  }
+  body.compact-mode .compact-store-list li.compact-rubrique-sep:first-child {
+    padding-top: 0;
+  }
   body.compact-mode .compact-item-name {
     flex: 1;
     min-width: 0;
@@ -1332,6 +1344,7 @@ window.toggleTheme = function() { setTheme(!dark); };
    MODE COMPACT COURSES
 ============================================================ */
 let compactMode = false;
+let lastRubriqueSelected = '';
 
 // Stockage local des cases cochées en mode compact (indépendant de Firebase)
 let compactChecked = {};
@@ -1376,17 +1389,36 @@ function renderCompactStoreLists() {
   const totValS = document.getElementById('compact-total-superu-val');
   const totValE = document.getElementById('compact-total-equal-val');
 
-  let cntA = 0, cntS = 0, cntE = 0;
-  let sumA = 0, sumS = 0, sumE = 0;
+  const filterRubrique = (lastRubriqueSelected || '').trim();
+  const eligible = rows
+    .filter(r => {
+      const name = (r.product || '').trim();
+      if (!name) return false;
+      const a = parseFloat(r.auchan), s = parseFloat(r.superu);
+      const aOk = !isNaN(a) && r.auchan !== '';
+      const sOk = !isNaN(s) && r.superu !== '';
+      if (!aOk && !sOk) return false;
+      if (!filterRubrique) return true;
+      return (r.rubrique || '').trim() === filterRubrique;
+    })
+    .sort((ra, rb) => {
+      const ia = rubriqueIndex((ra.rubrique || '').trim());
+      const ib = rubriqueIndex((rb.rubrique || '').trim());
+      if (ia !== ib) return ia - ib;
+      return (ra.product || '').localeCompare((rb.product || ''), 'fr', { sensitivity: 'base' });
+    });
 
-  rows.forEach(row => {
+  const buckets = {
+    auchan: { ul: ulA, cnt: 0, sum: 0, lastRub: null },
+    superu: { ul: ulS, cnt: 0, sum: 0, lastRub: null },
+    equal:  { ul: ulE, cnt: 0, sum: 0, lastRub: null },
+  };
+
+  eligible.forEach(row => {
     const name = (row.product || '').trim();
-    if (!name) return;
-
     const a = parseFloat(row.auchan), s = parseFloat(row.superu);
     const aOk = !isNaN(a) && row.auchan !== '';
     const sOk = !isNaN(s) && row.superu !== '';
-    if (!aOk && !sOk) return;
 
     let bucket = 'equal';
     let price = null;
@@ -1397,7 +1429,18 @@ function renderCompactStoreLists() {
     } else if (aOk) { bucket = 'auchan'; price = a; }
     else { bucket = 'superu'; price = s; }
 
-    const ul = bucket === 'auchan' ? ulA : bucket === 'superu' ? ulS : ulE;
+    const b = buckets[bucket];
+    const ul = b.ul;
+
+    const rubriqueDisp = ((row.rubrique || '').trim() || 'Sans rubrique');
+    if (b.lastRub !== rubriqueDisp) {
+      const sep = document.createElement('li');
+      sep.className = 'compact-rubrique-sep';
+      sep.textContent = rubriqueDisp;
+      ul.appendChild(sep);
+      b.lastRub = rubriqueDisp;
+    }
+
     const li = document.createElement('li');
 
     const ccKey = 'compact_' + row.id;
@@ -1428,23 +1471,22 @@ function renderCompactStoreLists() {
     li.appendChild(pr);
     ul.appendChild(li);
 
-    if (bucket === 'auchan') { cntA++; sumA += price; }
-    else if (bucket === 'superu') { cntS++; sumS += price; }
-    else { cntE++; sumE += price; }
+    b.cnt++;
+    b.sum += price;
   });
 
-  if (!cntA) ulA.innerHTML = '<li><span class="empty-msg">Aucun produit.</span></li>';
-  if (!cntS) ulS.innerHTML = '<li><span class="empty-msg">Aucun produit.</span></li>';
-  if (!cntE) ulE.innerHTML = '<li><span class="empty-msg">Aucun produit.</span></li>';
+  if (!buckets.auchan.cnt) ulA.innerHTML = '<li><span class="empty-msg">Aucun produit.</span></li>';
+  if (!buckets.superu.cnt) ulS.innerHTML = '<li><span class="empty-msg">Aucun produit.</span></li>';
+  if (!buckets.equal.cnt)  ulE.innerHTML = '<li><span class="empty-msg">Aucun produit.</span></li>';
 
   const showTot = (box, valEl, cnt, sum) => {
     if (!box || !valEl) return;
     box.style.display = cnt ? 'flex' : 'none';
     valEl.textContent = fmt(sum);
   };
-  showTot(totBoxA, totValA, cntA, sumA);
-  showTot(totBoxS, totValS, cntS, sumS);
-  showTot(totBoxE, totValE, cntE, sumE);
+  showTot(totBoxA, totValA, buckets.auchan.cnt, buckets.auchan.sum);
+  showTot(totBoxS, totValS, buckets.superu.cnt, buckets.superu.sum);
+  showTot(totBoxE, totValE, buckets.equal.cnt,  buckets.equal.sum);
 }
 
 
@@ -1733,6 +1775,7 @@ function buildRow(row, idx) {
   sel.value = row.rubrique || '';
   sel.addEventListener('change', e => {
     row.rubrique = e.target.value;
+    lastRubriqueSelected = row.rubrique || '';
     // Re-render complet pour ré-ordonner et mettre à jour les séparateurs
     renderAll();
     save();
