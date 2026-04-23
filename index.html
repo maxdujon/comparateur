@@ -788,6 +788,9 @@ tr.checked-row:hover td {
   display: none;
 }
 
+/* Card des listes compactes : cachée hors mode compact mobile */
+#card-compact-store-lists { display: none; }
+
 @media (max-width: 600px) {
   .compact-btn {
     display: flex;
@@ -820,6 +823,11 @@ tr.checked-row:hover td {
    couleur ou layout lors du check/uncheck.
 ============================================================ */
 @media (max-width: 600px) {
+
+  /* ── En mode compact : afficher les 3 listes, masquer le tableau ─ */
+  #card-compact-store-lists { display: none; }
+  body.compact-mode #card-compact-store-lists { display: block; }
+  body.compact-mode #card-tableau { display: none; }
 
   /* ── Masquer sections inutiles en mode courses ─────────────── */
   body.compact-mode #card-totaux,
@@ -978,6 +986,80 @@ tr.checked-row:hover td {
     border-radius: 99px;
     margin-left: 4px;
   }
+
+  /* ── Listes compactes par magasin (checkbox + nom) ──────────── */
+  body.compact-mode .compact-lists-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  body.compact-mode .compact-store-list {
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+  }
+  body.compact-mode .compact-store-list.auchan { background: var(--a-light); border-color: var(--a-border); }
+  body.compact-mode .compact-store-list.superu { background: var(--s-light); border-color: var(--s-border); }
+  body.compact-mode .compact-store-list.equal  { background: #fef9c3; border-color: rgba(133,77,14,.25); }
+  [data-theme="dark"] body.compact-mode .compact-store-list.equal { background: #422006; border-color: rgba(253,230,138,.25); }
+
+  body.compact-mode .compact-store-list h3 {
+    font-size: .72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    margin-bottom: 8px;
+  }
+  body.compact-mode .compact-store-list.auchan h3 { color: var(--a-color); }
+  body.compact-mode .compact-store-list.superu h3 { color: var(--s-color); }
+  body.compact-mode .compact-store-list.equal  h3 { color: #854d0e; }
+  [data-theme="dark"] body.compact-mode .compact-store-list.equal h3 { color: #fde68a; }
+
+  body.compact-mode .compact-store-list ul { list-style: none; }
+  body.compact-mode .compact-store-list li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0;
+    border-bottom: 1px dashed rgba(128,128,128,.15);
+    font-size: .92rem;
+  }
+  body.compact-mode .compact-store-list li:last-child { border-bottom: none; }
+  body.compact-mode .compact-item-name {
+    flex: 1;
+    min-width: 0;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+  body.compact-mode .compact-item-check {
+    width: 26px;
+    height: 26px;
+    min-width: 26px;
+    border-radius: 8px;
+    border: 2.5px solid var(--border);
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background: var(--surface);
+    position: relative;
+  }
+  body.compact-mode .compact-store-list.auchan .compact-item-check:checked { background: var(--a-color); border-color: var(--a-color); }
+  body.compact-mode .compact-store-list.superu .compact-item-check:checked { background: var(--s-color); border-color: var(--s-color); }
+  body.compact-mode .compact-store-list.equal  .compact-item-check:checked { background: var(--accent);  border-color: var(--accent); }
+  body.compact-mode .compact-item-check:checked::after {
+    content: '';
+    position: absolute;
+    left: 7px; top: 3px;
+    width: 9px; height: 13px;
+    border-right: 2.5px solid #fff;
+    border-bottom: 2.5px solid #fff;
+    transform: rotate(45deg);
+  }
+  body.compact-mode .compact-store-list li.checked .compact-item-name {
+    color: var(--text-faint);
+    opacity: .65;
+  }
 }
 </style>
 </head>
@@ -1039,6 +1121,25 @@ tr.checked-row:hover td {
       </thead>
       <tbody id="main-tbody"></tbody>
     </table>
+  </div>
+</div>
+
+<!-- MODE COMPACT (MOBILE) — LISTES PAR MAGASIN -->
+<div class="card" id="card-compact-store-lists">
+  <div class="card-title">🧾 Liste (mode compact)</div>
+  <div class="compact-lists-grid">
+    <div class="compact-store-list auchan">
+      <h3>🔴 Moins cher chez Auchan</h3>
+      <ul id="compact-list-auchan"></ul>
+    </div>
+    <div class="compact-store-list superu">
+      <h3>🔵 Moins cher chez Super U</h3>
+      <ul id="compact-list-superu"></ul>
+    </div>
+    <div class="compact-store-list equal">
+      <h3>🟡 Au choix (même prix)</h3>
+      <ul id="compact-list-equal"></ul>
+    </div>
   </div>
 </div>
 
@@ -1294,8 +1395,78 @@ window.toggleCompact = function() {
       }
     });
   }
+  if (compactMode) renderCompactStoreLists();
   try { localStorage.setItem('comparateur_compact', JSON.stringify(compactMode)); } catch(_) {}
 };
+
+/* ============================================================
+   MODE COMPACT — LISTES PAR MAGASIN (Auchan / Super U / Au choix)
+   - Affiche uniquement : checkbox + nom
+   - S'appuie sur `rows` (tri existant) + `compactChecked` (localStorage)
+============================================================ */
+function renderCompactStoreLists() {
+  const ulA = document.getElementById('compact-list-auchan');
+  const ulS = document.getElementById('compact-list-superu');
+  const ulE = document.getElementById('compact-list-equal');
+  if (!ulA || !ulS || !ulE) return;
+
+  ulA.innerHTML = '';
+  ulS.innerHTML = '';
+  ulE.innerHTML = '';
+
+  let cntA = 0, cntS = 0, cntE = 0;
+
+  rows.forEach(row => {
+    const name = (row.product || '').trim();
+    if (!name) return;
+
+    const a = parseFloat(row.auchan), s = parseFloat(row.superu);
+    const aOk = !isNaN(a) && row.auchan !== '';
+    const sOk = !isNaN(s) && row.superu !== '';
+    if (!aOk && !sOk) return;
+
+    let bucket = 'equal';
+    if (aOk && sOk) {
+      if (a < s) bucket = 'auchan';
+      else if (s < a) bucket = 'superu';
+      else bucket = 'equal';
+    } else if (aOk) bucket = 'auchan';
+    else bucket = 'superu';
+
+    const ul = bucket === 'auchan' ? ulA : bucket === 'superu' ? ulS : ulE;
+    const li = document.createElement('li');
+
+    const ccKey = 'compact_' + row.id;
+    const isChk = !!compactChecked[ccKey];
+    if (isChk) li.classList.add('checked');
+
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.className = 'compact-item-check';
+    cb.checked = isChk;
+    cb.addEventListener('change', () => {
+      compactChecked[ccKey] = cb.checked;
+      saveCompactChecked();
+      li.classList.toggle('checked', cb.checked);
+    });
+
+    const nm = document.createElement('span');
+    nm.className = 'compact-item-name';
+    nm.textContent = name;
+
+    li.appendChild(cb);
+    li.appendChild(nm);
+    ul.appendChild(li);
+
+    if (bucket === 'auchan') cntA++;
+    else if (bucket === 'superu') cntS++;
+    else cntE++;
+  });
+
+  if (!cntA) ulA.innerHTML = '<li><span class="empty-msg">Aucun produit.</span></li>';
+  if (!cntS) ulS.innerHTML = '<li><span class="empty-msg">Aucun produit.</span></li>';
+  if (!cntE) ulE.innerHTML = '<li><span class="empty-msg">Aucun produit.</span></li>';
+}
 
 /* ============================================================
    LOGIQUE CASES À COCHER — "DANS LE CADDIE"
@@ -1403,6 +1574,7 @@ function renderAll() {
   rebuildMainTable();
   renderRecoTable();
   renderShoppingLists();
+  renderCompactStoreLists();
   renderTotals();
   document.getElementById('row-count').textContent =
     rows.length + ' produit' + (rows.length > 1 ? 's' : '');
