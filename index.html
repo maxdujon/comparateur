@@ -1088,14 +1088,6 @@ tr.checked-row:hover td {
   display: block;
 }
 
-/* Canvas de décodage ZBar — visible pour la capture mais caché visuellement */
-#scan-canvas {
-  position: absolute;
-  top: -9999px;
-  left: -9999px;
-  display: block;
-}
-
 /* Ligne de scan animée */
 .scan-line {
   position: absolute;
@@ -1410,9 +1402,8 @@ tr.checked-row:hover td {
         <span class="scan-wasm-label" id="scan-wasm-label">Chargement du scanner…</span>
       </div>
 
-      <!-- Viewfinder vidéo -->
+      <!-- Viewfinder vidéo (le <video> est injecté dynamiquement) -->
       <div class="scan-video-wrap" id="scan-video-wrap">
-        <video id="scan-video" autoplay muted playsinline webkit-playsinline></video>
         <div class="scan-corner tl"></div>
         <div class="scan-corner tr"></div>
         <div class="scan-corner bl"></div>
@@ -1442,8 +1433,8 @@ tr.checked-row:hover td {
   </div>
 </div>
 
-<!-- Canvas hors-DOM pour la capture de frames -->
-<canvas id="scan-canvas"></canvas>
+<!-- Canvas hors-DOM pour capture de frames ZBar -->
+<canvas id="scan-canvas" style="position:absolute;top:-9999px;left:-9999px;display:block;"></canvas>
 
 <!-- ============================================================
      FIREBASE + APP SCRIPT
@@ -2250,34 +2241,40 @@ function showToast(msg) {
 }
 
 /* ============================================================
-   A2 — SCAN EAN — VERSION ZBAR WEBASSEMBLY
-   ─────────────────────────────────────────
-   Stratégie de décodage (par ordre de priorité) :
+   A2 — SCAN EAN — VERSION ZBAR WEBASSEMBLY FIABLE
+   ─────────────────────────────────────────────────
+   Stratégie (ordre de priorité) :
    1. BarcodeDetector natif (Android Chrome ≥ 83, non iOS)
    2. ZBar WebAssembly via @undecaf/zbar-wasm (CDN jsDelivr)
-   3. Saisie manuelle EAN en fallback
+   3. Saisie manuelle EAN (fallback)
 
-   ZBar WASM est nettement plus fiable qu'une lib JS pure
-   sur iOS Safari car le décodage se fait en C compilé.
+   Points clés de fiabilité :
+   - Le <video> est créé dynamiquement à chaque scan
+   - stopScanner() libère totalement la caméra sur iOS
+     (stop tracks → pause → srcObject=null → remove → destroy ZBar → délai 200ms)
+   - Plusieurs scans successifs sont supportés sans rechargement
 ============================================================ */
 
-// ── Détection plateforme ─────────────────────────────────────
+// ── Détection plateforme ──────────────────────────────────────
 const IS_IOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-// BarcodeDetector : ne pas utiliser sur iOS (implémentation cassée)
+// BarcodeDetector : désactivé sur iOS (implémentation cassée dans WKWebView)
 const CAN_USE_BARCODE_DETECTOR = ('BarcodeDetector' in window) && !IS_IOS;
 
-// ── État interne du scanner ──────────────────────────────────
-let _scanStream    = null;   // MediaStream actif
-let _scanAnimFrame = null;   // requestAnimationFrame id
-let _scanActive    = false;  // true quand la boucle de scan tourne
-let _zbarModule    = null;   // module ZBar WASM chargé (mis en cache)
-let _zbarLoading   = false;  // verrou pour éviter double-chargement
+// ── État interne du scanner ───────────────────────────────────
+let _scanActive    = false;   // true quand la boucle de scan tourne
+let _scanAnimFrame = null;    // requestAnimationFrame id
+let _zbarModule    = null;    // module ZBar WASM (mis en cache global)
+let _zbarLoading   = false;   // verrou anti double-chargement
+// Note : _scanStream et _scanVideoEl sont locaux à chaque session de scan
+//        et détruits via stopScanner()
 
-// ── Canvas partagé pour capture de frames ───────────────────
+// ── Canvas partagé pour capture de frames ────────────────────
 const _scanCanvas = document.getElementById('scan-canvas');
-const _scanCtx    = _scanCanvas ? _scanCanvas.getContext('2d', { willReadFrequently: true }) : null;
+const _scanCtx    = _scanCanvas
+  ? _scanCanvas.getContext('2d', { willReadFrequently: true })
+  : null;
 
-/** ── Helpers UI ─────────────────────────────────────────────── */
+/* ── Helpers UI ──────────────────────────────────────────────── */
 function setScanStatus(msg, type = '') {
   const el = document.getElementById('scan-status');
   if (!el) return;
@@ -2297,7 +2294,42 @@ function setWasmProgress(pct, label) {
   if (lbl)   lbl.textContent  = label || '';
 }
 
-/** ── Ouvrir le modal ─────────────────────────────────────────── */
+/* ── stopScanner() — libération complète caméra + ZBar ──────── */
+async function stopScanner(videoEl, stream) {
+  _scanActive = false;
+
+  // 1. Arrêter la boucle RAF immédiatement
+  if (_scanAnimFrame !== null) {
+    cancelAnimationFrame(_scanAnimFrame);
+    _scanAnimFrame = null;
+  }
+
+  // 2. Stopper tous les tracks vidéo (libère le voyant caméra sur iOS)
+  if (stream) {
+    stream.getTracks().forEach(t => t.stop());
+  }
+
+  // 3. Mettre en pause la vidéo
+  if (videoEl) {
+    try { videoEl.pause(); } catch (_) {}
+    // 4. Retirer la source
+    videoEl.srcObject = null;
+    // 5. Retirer l'élément vidéo du DOM
+    try { videoEl.remove(); } catch (_) {}
+  }
+
+  // 6. Masquer le viewfinder
+  const videoWrap = document.getElementById('scan-video-wrap');
+  if (videoWrap) videoWrap.classList.remove('visible');
+
+  // 7. Réinitialiser la barre WASM
+  setWasmProgress(100, '');
+
+  // 8. Délai obligatoire avant de permettre un nouveau scan (iOS)
+  await new Promise(r => setTimeout(r, 200));
+}
+
+/* ── Ouvrir le modal ─────────────────────────────────────────── */
 window.openScanModal = function() {
   _scanActive = false;
   const overlay = document.getElementById('scan-overlay');
@@ -2305,31 +2337,52 @@ window.openScanModal = function() {
   setScanStatus('');
   setScanHint('Appuyez sur le bouton pour démarrer la caméra.');
   document.getElementById('scan-manual-input').value = '';
-  document.getElementById('scan-start-btn').style.display  = '';
-  document.getElementById('scan-video-wrap').classList.remove('visible');
+
+  const startBtn = document.getElementById('scan-start-btn');
+  if (startBtn) {
+    startBtn.style.display  = '';
+    startBtn.disabled       = false;
+    startBtn.textContent    = '📷 Démarrer la caméra';
+  }
+
+  const videoWrap = document.getElementById('scan-video-wrap');
+  if (videoWrap) {
+    videoWrap.classList.remove('visible');
+    // Supprimer tout <video> résiduel
+    videoWrap.querySelectorAll('video').forEach(v => v.remove());
+  }
+
   setWasmProgress(100, '');
 };
 
-/** ── Fermer le modal ─────────────────────────────────────────── */
+/* ── Fermer le modal ─────────────────────────────────────────── */
 window.closeScanModal = function() {
   document.getElementById('scan-overlay').classList.remove('open');
-  _stopAllScan();
+
+  // Récupérer le <video> actif s'il existe et stopper proprement
+  const videoWrap = document.getElementById('scan-video-wrap');
+  const videoEl   = videoWrap ? videoWrap.querySelector('video') : null;
+  const stream    = videoEl ? videoEl.srcObject : null;
+
+  // Appel asynchrone — on ne bloque pas l'UI
+  stopScanner(videoEl, stream).catch(() => {});
 };
 
-/** ── Démarrer la caméra ─────────────────────────────────────── */
+/* ── Démarrer la caméra ─────────────────────────────────────── */
 window.startScanCamera = async function() {
   if (_scanActive) return;
 
   const startBtn  = document.getElementById('scan-start-btn');
   const videoWrap = document.getElementById('scan-video-wrap');
-  const video     = document.getElementById('scan-video');
 
+  // Désactiver le bouton immédiatement pour éviter double-clic
   startBtn.disabled    = true;
   startBtn.textContent = '⏳ Démarrage…';
   setScanStatus('');
   setScanHint('Accès à la caméra en cours…');
 
-  _stopAllScan();
+  // Supprimer tout <video> résiduel dans le wrapper
+  videoWrap.querySelectorAll('video').forEach(v => v.remove());
 
   if (!navigator.mediaDevices?.getUserMedia) {
     setScanHint('Caméra non disponible. Saisissez l\'EAN ci-dessous.');
@@ -2338,29 +2391,44 @@ window.startScanCamera = async function() {
     return;
   }
 
-  // Contraintes caméra : facingMode exact "environment" pour arrière
+  // Créer un NOUVEL élément <video> à chaque scan
+  const videoEl = document.createElement('video');
+  videoEl.autoplay       = true;
+  videoEl.muted          = true;
+  videoEl.playsInline    = true;
+  videoEl.setAttribute('playsinline', '');
+  videoEl.setAttribute('webkit-playsinline', '');
+  videoEl.style.cssText  = 'width:100%;height:100%;object-fit:cover;display:block;';
+  // Insérer avant les coins décoratifs (premier enfant)
+  videoWrap.insertBefore(videoEl, videoWrap.firstChild);
+
+  // Contraintes caméra (caméra arrière)
   const constraintsStrict = IS_IOS
     ? { video: { facingMode: { exact: 'environment' } } }
     : { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } } };
 
+  let stream = null;
   try {
-    _scanStream = await navigator.mediaDevices.getUserMedia(constraintsStrict);
-  } catch (_err) {
+    stream = await navigator.mediaDevices.getUserMedia(constraintsStrict);
+  } catch (_) {
     // Fallback sans contrainte facingMode
     try {
-      _scanStream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1280 }, height: { ideal: 720 } } });
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 1280 }, height: { ideal: 720 } }
+      });
     } catch (_err2) {
       setScanHint('Accès caméra refusé. Saisissez l\'EAN ci-dessous.');
       startBtn.disabled    = false;
       startBtn.textContent = '📷 Réessayer';
+      videoEl.remove();
       return;
     }
   }
 
-  video.srcObject = _scanStream;
-  try { await video.play(); } catch (_) {}
+  videoEl.srcObject = stream;
+  try { await videoEl.play(); } catch (_) {}
 
-  // Afficher la vidéo, masquer le bouton démarrer
+  // Afficher le viewfinder, masquer le bouton démarrer
   startBtn.style.display = 'none';
   videoWrap.classList.add('visible');
   setScanHint('Caméra active — tenez le code-barres dans le cadre vert.');
@@ -2368,25 +2436,27 @@ window.startScanCamera = async function() {
   _scanActive = true;
 
   if (CAN_USE_BARCODE_DETECTOR) {
-    // ── Android Chrome / desktop : BarcodeDetector natif (rapide) ──
-    await _startBarcodeDetector(video);
+    // ── Android Chrome / desktop : BarcodeDetector natif ──
+    await _startBarcodeDetector(videoEl, stream);
   } else {
-    // ── iOS Safari + autres : ZBar WASM ─────────────────────────────
-    await _startZBarWasm(video);
+    // ── iOS Safari + autres : ZBar WASM ────────────────────
+    await _startZBarWasm(videoEl, stream);
   }
 };
 
 /* ============================================================
    STRATEGY 1 — BarcodeDetector natif (Android Chrome)
 ============================================================ */
-async function _startBarcodeDetector(video) {
+async function _startBarcodeDetector(videoEl, stream) {
   let detector;
   try {
     const supported = await BarcodeDetector.getSupportedFormats();
     const eanFormats = supported.filter(f =>
       ['ean_13','ean_8','upc_a','upc_e','code_128','code_39','qr_code'].includes(f)
     );
-    detector = new BarcodeDetector({ formats: eanFormats.length ? eanFormats : ['ean_13','ean_8'] });
+    detector = new BarcodeDetector({
+      formats: eanFormats.length ? eanFormats : ['ean_13','ean_8']
+    });
   } catch (_) {
     detector = new BarcodeDetector({ formats: ['ean_13','ean_8'] });
   }
@@ -2394,11 +2464,15 @@ async function _startBarcodeDetector(video) {
   const loop = async () => {
     if (!_scanActive || !document.getElementById('scan-overlay').classList.contains('open')) return;
     try {
-      if (video.readyState >= 2) {
-        const codes = await detector.detect(video);
+      if (videoEl.readyState >= 2) {
+        const codes = await detector.detect(videoEl);
         if (codes?.length) {
           const raw = codes[0].rawValue;
-          if (/^\d{8,14}$/.test(raw)) { _onEanDetected(raw); return; }
+          if (/^\d{8,14}$/.test(raw)) {
+            await stopScanner(videoEl, stream);
+            _onEanDetected(raw);
+            return;
+          }
         }
       }
     } catch (_) {}
@@ -2411,37 +2485,43 @@ async function _startBarcodeDetector(video) {
    STRATEGY 2 — ZBar WebAssembly
    CDN : @undecaf/zbar-wasm (jsDelivr ESM build)
    Compatible iOS Safari ≥ 14 + tous navigateurs modernes
-   Le fichier .wasm est ~450 Ko et se charge une seule fois.
+   Le fichier .wasm (~450 Ko) est chargé une seule fois et mis en cache.
 ============================================================ */
 const ZBAR_WASM_URL = 'https://cdn.jsdelivr.net/npm/@undecaf/zbar-wasm@0.10.1/dist/index.mjs';
 
 async function _loadZBarWasm() {
   if (_zbarModule) return _zbarModule;
+
   if (_zbarLoading) {
-    // Attendre que l'autre appel concurrent finisse
-    while (_zbarLoading) await new Promise(r => setTimeout(r, 100));
-    return _zbarModule;
+    // Attendre qu'un chargement concurrent se termine
+    let waited = 0;
+    while (_zbarLoading && waited < 15000) {
+      await new Promise(r => setTimeout(r, 100));
+      waited += 100;
+    }
+    if (_zbarModule) return _zbarModule;
+    throw new Error('ZBar WASM loading timeout');
   }
 
   _zbarLoading = true;
   setWasmProgress(10, 'Chargement du scanner ZBar…');
 
   try {
-    // Import dynamique du module ESM ZBar WASM
+    // Import dynamique ESM
     const mod = await import(/* webpackIgnore: true */ ZBAR_WASM_URL);
     setWasmProgress(50, 'Initialisation ZBar…');
 
-    // init() charge le .wasm binaire
+    // Initialiser le .wasm binaire
     if (typeof mod.init === 'function') {
       await mod.init();
     } else if (typeof mod.default?.init === 'function') {
       await mod.default.init();
     }
 
-    _zbarModule = mod.default || mod;
+    _zbarModule  = mod.default || mod;
+    _zbarLoading = false;
     setWasmProgress(100, 'Scanner prêt');
     setTimeout(() => setWasmProgress(100, ''), 600);
-    _zbarLoading = false;
     return _zbarModule;
   } catch (err) {
     _zbarLoading = false;
@@ -2450,27 +2530,39 @@ async function _loadZBarWasm() {
   }
 }
 
-async function _startZBarWasm(video) {
+async function _startZBarWasm(videoEl, stream) {
   let zbar;
   try {
     zbar = await _loadZBarWasm();
-  } catch (err) {
-    // ZBar WASM indisponible — fallback saisie manuelle
+  } catch (_) {
+    // ZBar WASM indisponible — montrer la saisie manuelle
     setScanHint('Lecteur de code-barres indisponible. Saisissez l\'EAN manuellement.');
     setScanStatus('Scanner non chargé. Utilisez la saisie manuelle.', 'error');
+
+    // Remettre le bouton pour réessayer
+    const startBtn = document.getElementById('scan-start-btn');
+    if (startBtn) {
+      startBtn.style.display = '';
+      startBtn.disabled      = false;
+      startBtn.textContent   = '📷 Réessayer';
+    }
+
+    // Libérer la caméra même si ZBar n'a pas chargé
+    await stopScanner(videoEl, stream);
     return;
   }
 
-  // Résolution de capture : on descend à 640×480 pour les performances sur iOS
+  // Résolution de capture : 640×480 pour performances iOS
   const CAPTURE_W = 640;
   const CAPTURE_H = 480;
   _scanCanvas.width  = CAPTURE_W;
   _scanCanvas.height = CAPTURE_H;
 
-  // scanSymbols ou scanImageData selon version du module
+  // Localiser la fonction de scan dans l'API ZBar (variable selon version)
   const scanFn = zbar.scanImageData || zbar.scanSymbols || null;
   if (!scanFn) {
     setScanHint('API ZBar inattendue. Saisissez l\'EAN manuellement.');
+    await stopScanner(videoEl, stream);
     return;
   }
 
@@ -2481,27 +2573,32 @@ async function _startZBarWasm(video) {
   const loop = async (timestamp) => {
     if (!_scanActive || !document.getElementById('scan-overlay').classList.contains('open')) return;
 
-    if (timestamp - lastCapture >= INTERVAL_MS && video.readyState >= 2 && video.videoWidth > 0) {
+    if (
+      timestamp - lastCapture >= INTERVAL_MS &&
+      videoEl.readyState >= 2 &&
+      videoEl.videoWidth > 0
+    ) {
       lastCapture = timestamp;
       try {
-        // Dessiner la frame dans le canvas caché
-        _scanCtx.drawImage(video, 0, 0, CAPTURE_W, CAPTURE_H);
+        _scanCtx.drawImage(videoEl, 0, 0, CAPTURE_W, CAPTURE_H);
         const imageData = _scanCtx.getImageData(0, 0, CAPTURE_W, CAPTURE_H);
 
-        // ZBar : scanImageData(ImageData) → Symbol[]
         const symbols = await scanFn.call(zbar, imageData);
 
         if (symbols?.length) {
           for (const sym of symbols) {
-            const raw = typeof sym.decode === 'function' ? sym.decode() : (sym.data || sym.rawData || '');
+            const raw = typeof sym.decode === 'function'
+              ? sym.decode()
+              : (sym.data || sym.rawData || '');
             if (/^\d{8,14}$/.test(raw)) {
+              await stopScanner(videoEl, stream);
               _onEanDetected(raw);
-              return; // arrêter la boucle
+              return; // sortir de la boucle
             }
           }
         }
       } catch (_) {
-        // Erreur de frame individuelle — on continue
+        // Erreur sur une frame individuelle — on continue
       }
     }
 
@@ -2512,43 +2609,18 @@ async function _startZBarWasm(video) {
 }
 
 /* ============================================================
-   ARRÊT PROPRE DU SCANNER
-============================================================ */
-function _stopAllScan() {
-  _scanActive = false;
-
-  if (_scanAnimFrame) {
-    cancelAnimationFrame(_scanAnimFrame);
-    _scanAnimFrame = null;
-  }
-
-  if (_scanStream) {
-    _scanStream.getTracks().forEach(t => t.stop());
-    _scanStream = null;
-  }
-
-  const video = document.getElementById('scan-video');
-  if (video) { video.srcObject = null; video.load(); }
-
-  const videoWrap = document.getElementById('scan-video-wrap');
-  if (videoWrap) videoWrap.classList.remove('visible');
-
-  setWasmProgress(100, '');
-}
-
-/* ============================================================
    EAN DÉTECTÉ — LOOKUP OPENFOODFACTS + AJOUT LIGNE
 ============================================================ */
 async function _onEanDetected(ean) {
-  _stopAllScan();
+  // stopScanner() a déjà été appelé avant d'arriver ici
 
   setScanStatus(`EAN : ${ean} — Recherche du produit…`, 'loading');
   setScanHint('');
 
-  // Masquer le bouton démarrer
   const startBtn = document.getElementById('scan-start-btn');
   if (startBtn) startBtn.style.display = 'none';
 
+  // Lookup OpenFoodFacts
   let productName = '';
   try {
     const resp = await fetch(`https://world.openfoodfacts.org/api/v0/product/${ean}.json`);
@@ -2562,7 +2634,7 @@ async function _onEanDetected(ean) {
 
   if (!productName) productName = 'Produit inconnu';
 
-  // Créer la nouvelle ligne avec les champs standards
+  // Ajouter la nouvelle ligne
   const newRow = {
     id:       generateId(),
     product:  productName,
@@ -2577,6 +2649,13 @@ async function _onEanDetected(ean) {
 
   setScanStatus(`✓ "${productName}" ajouté.`, 'ok');
   showToast(`📦 "${productName}" ajouté`);
+
+  // Remettre le bouton "Démarrer" pour permettre un nouveau scan
+  if (startBtn) {
+    startBtn.style.display = '';
+    startBtn.disabled      = false;
+    startBtn.textContent   = '📷 Scanner un autre produit';
+  }
 
   // Fermer le modal après 2 secondes
   setTimeout(() => {
@@ -2600,7 +2679,8 @@ window.submitManualEAN = function() {
     setScanStatus('EAN invalide — il doit contenir entre 8 et 14 chiffres.', 'error');
     return;
   }
-  _onEanDetected(val);
+  // En cas de saisie manuelle, pas de caméra active — stopScanner avec null
+  stopScanner(null, null).then(() => _onEanDetected(val));
 };
 
 window.handleManualKey = function(e) {
@@ -2628,7 +2708,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
-// Fermer le modal scan si on clique sur l'overlay
+// Fermer le modal scan si on clique sur l'overlay (fond sombre)
 document.getElementById('scan-overlay').addEventListener('click', function(e) {
   if (e.target === this) closeScanModal();
 });
